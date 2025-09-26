@@ -9,15 +9,20 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/nextjs-registry": "^1.1.0",
+    "@prisma/client": "^6.16.2",
+    "antd": "^5.27.4",
+    "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.4"
+    "ulid": "^3.0.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
-    "@eslint/eslintrc": "^3"
+    "prisma": "^6.16.2",
+    "tailwindcss": "^4"
   }
 }

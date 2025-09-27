@@ -2,9 +2,12 @@
 
 import 'antd/dist/reset.css';
 import {Card, Button, Form, Input, message} from 'antd';
+import {decodeJwt} from "jose";
+import {useAuth} from "@/app/contexts/AuthContext";
 
 export default function Login() {
     const [messageApi, contextHolder] = message.useMessage();
+    const { setUser } = useAuth();
 
     const onFinish = async (values) => {
         try {
@@ -31,6 +34,10 @@ export default function Login() {
                 });
                 return;
             }
+
+            const token = data.token;
+            const decoded = decodeJwt(token);
+            setUser(decoded);
 
             messageApi.open({
                 type: 'success',

@@ -1,31 +1,37 @@
-"use client";
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from "react";
-import jwt from "jsonwebtoken";
 
 const AuthContext = createContext({ user: null, setUser: () => {} });
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 从 cookie 读取 token
-        const token = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("token="))
-            ?.split("=")[1];
-
-        if (token) {
+        const fetchUser = async () => {
             try {
-                const decoded = jwt.decode(token); // 前端只解码，不验证 SECRET_KEY
-                setUser(decoded);
+                const res = await fetch('/api/me');
+                if (!res.ok) {
+                    console.error(res.message);
+                }
+
+
+                const data = await res.json();
+                setUser(data.user || null);
             } catch (err) {
+                console.error("Error fetching user:", err);
                 setUser(null);
+            } finally {
+                setLoading(false);
             }
-        }
+        };
+
+        fetchUser();
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, setUser }}>
+        <AuthContext.Provider value={{ user, setUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

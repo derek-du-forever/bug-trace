@@ -39,7 +39,7 @@ export async function POST(req) {
         .sign(SECRET_KEY);
 
     // 返回响应并设置 cookie
-    const res = NextResponse.json({ message: "Login success" });
+    const res = NextResponse.json({ token, message: "Login success" });
     res.cookies.set("token", token, {
         httpOnly: true,
         path: "/",

@@ -37,10 +37,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## How to use
 
--   migrate database
+-   database schema define: `/prisma/schema.prisma`
+
+-   migrate database (after modify database schema define, run this command)
     `npx prisma db push --accept-data-loss`
 
--   generate prisma client: `npx prisma generate --watch`
+-   generate prisma client (run this command at start): `npx prisma generate --watch`
 
 -   UI lib: https://ant.design/components/overview/
 

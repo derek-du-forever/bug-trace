@@ -1,15 +1,14 @@
-'use client';
+"use client";
 
-import React, {useState} from 'react';
-import {Input, message, Form, Modal} from 'antd';
-import {useAuth} from '@/app/contexts/AuthContext';
+import React, { useState } from "react";
+import { Input, message, Form, Modal } from "antd";
+import { useAuth } from "@/app/contexts/AuthContext";
 
-export default function ChangePassword({open, setOpen}) {
-    const {user} = useAuth(); // 当前用户
+export default function ChangePassword({ open, setOpen }) {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
 
-    // 关键：使用 useForm 获取实例
     const [form] = Form.useForm();
 
     const handleOk = async () => {
@@ -18,16 +17,16 @@ export default function ChangePassword({open, setOpen}) {
 
             if (!user) {
                 messageApi.open({
-                    type: 'error',
-                    content: 'User not logged in',
+                    type: "error",
+                    content: "User not logged in",
                 });
                 return;
             }
 
             setLoading(true);
-            const res = await fetch('/api/change-password', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+            const res = await fetch("/api/change-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     userId: user.id,
                     oldPassword: values.oldPassword,
@@ -39,23 +38,23 @@ export default function ChangePassword({open, setOpen}) {
 
             if (!res.ok) {
                 messageApi.open({
-                    type: 'error',
-                    content: data.error || 'Failed to change password',
+                    type: "error",
+                    content: data.error || "Failed to change password",
                 });
             } else {
                 messageApi.open({
-                    type: 'success',
-                    content: 'Password changed successfully',
+                    type: "success",
+                    content: "Password changed successfully",
                 });
-                setOpen(false); // 成功关闭弹窗
-                form.resetFields(); // 关键：重置表单
+                setOpen(false);
+                form.resetFields();
             }
         } catch (err) {
             console.error(err);
-            if (err.errorFields) return; // validateFields校验失败
+            if (err.errorFields) return;
             messageApi.open({
-                type: 'error',
-                content: 'Network error',
+                type: "error",
+                content: "Network error",
             });
         } finally {
             setLoading(false);
@@ -80,17 +79,27 @@ export default function ChangePassword({open, setOpen}) {
                 <Form.Item
                     label="Old Password"
                     name="oldPassword"
-                    rules={[{required: true, message: 'Please enter old password'}]}
+                    rules={[
+                        {
+                            required: true,
+                            message: "Please enter old password",
+                        },
+                    ]}
                 >
-                    <Input.Password/>
+                    <Input.Password />
                 </Form.Item>
 
                 <Form.Item
                     label="New Password"
                     name="newPassword"
-                    rules={[{required: true, message: 'Please enter new password'}]}
+                    rules={[
+                        {
+                            required: true,
+                            message: "Please enter new password",
+                        },
+                    ]}
                 >
-                    <Input.Password/>
+                    <Input.Password />
                 </Form.Item>
             </Form>
         </Modal>

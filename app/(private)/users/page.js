@@ -1,26 +1,37 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Table, Button, Form, Input, Radio } from "antd";
+import { Table, Button, Form, Input, Radio, Popconfirm } from "antd";
+import CreateOrEditUserModal from "./create-or-edit-user.modal";
 
-const columns = [
+const columns = (onEdit, onDelete) => [
+    { title: "Username", dataIndex: "username", key: "username" },
+    { title: "Display Name", dataIndex: "displayName", key: "displayName" },
+    { title: "Roles", dataIndex: "roles", key: "roles" },
     {
-        title: "Username",
-        dataIndex: "username",
-        key: "username",
-    },
-    {
-        title: "Display Name",
-        dataIndex: "displayName",
-        key: "displayName",
-    },
-    {
-        title: "Roles",
-        dataIndex: "roles",
-        key: "roles",
+        title: "Action",
+        key: "action",
+        render: (_, record) => (
+            <>
+                <Button type="link" onClick={() => onEdit(record)}>
+                    Edit
+                </Button>
+                <Popconfirm
+                    title="Delete the user"
+                    description="Are you sure to delete this user?"
+                    onConfirm={() => onDelete(record)}
+                    okText="Yes"
+                    cancelText="No"
+                >
+                    <Button danger type="link">
+                        Delete
+                    </Button>
+                </Popconfirm>
+            </>
+        ),
     },
 ];
 
-const App = () => {
+const UserTable = () => {
     const [form] = Form.useForm();
     const [data, setData] = useState([]);
     const [pagination, setPagination] = useState({
@@ -30,11 +41,12 @@ const App = () => {
     });
     const [loading, setLoading] = useState(false);
 
-    // ✅ fetchData 是纯函数，不依赖 pagination state
+    const [modalVisible, setModalVisible] = useState(false);
+    const [editUser, setEditUser] = useState(null);
+
     const fetchData = useCallback(
         async ({ current, pageSize }) => {
             setLoading(true);
-
             const values = form.getFieldsValue();
             const query = new URLSearchParams({
                 page: current,
@@ -48,35 +60,64 @@ const App = () => {
             const json = await res.json();
 
             setData(json.data);
-            setPagination({
-                current,
-                pageSize,
-                total: json.pagination.total,
-            });
+            setPagination({ current, pageSize, total: json.pagination.total });
             setLoading(false);
         },
-        [form] // 只依赖 form
+        [form]
     );
 
     useEffect(() => {
-        fetchData({
-            current: 1,
-            pageSize: 10,
-        });
+        fetchData({ current: 1, pageSize: 10 });
     }, [fetchData]);
 
-    // 分页变化
     const handleTableChange = (pager) => {
         fetchData({ current: pager.current, pageSize: pager.pageSize });
     };
 
-    // 表单提交搜索
     const onFinish = () => {
-        fetchData({ current: 1, pageSize: pagination.pageSize }); // 搜索重置到第一页
+        fetchData({ current: 1, pageSize: pagination.pageSize });
+    };
+
+    const handleEdit = (user) => {
+        setEditUser(user);
+        setModalVisible(true);
+    };
+
+    const handleDelete = (user) => {
+        fetch(`/api/users/${user.id}`, { method: "DELETE" }).then(() => {
+            fetchData({ current: 1, pageSize: pagination.pageSize });
+        });
+    };
+
+    const handleModalOk = async (values) => {
+        if (editUser) {
+            await fetch(`/api/users/${editUser.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(values),
+            });
+        } else {
+            await fetch(`/api/users`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(values),
+            });
+        }
+        setModalVisible(false);
+        setEditUser(null);
+        fetchData({ current: 1, pageSize: pagination.pageSize });
     };
 
     return (
         <>
+            <Button
+                type="primary"
+                className="mb-4"
+                onClick={() => handleEdit(null)}
+            >
+                Add User
+            </Button>
+
             <Form
                 form={form}
                 layout="inline"
@@ -105,7 +146,7 @@ const App = () => {
 
             <Table
                 className="pt-4"
-                columns={columns}
+                columns={columns(handleEdit, handleDelete)}
                 dataSource={data}
                 loading={loading}
                 pagination={{
@@ -117,8 +158,15 @@ const App = () => {
                 onChange={handleTableChange}
                 rowKey="id"
             />
+
+            <CreateOrEditUserModal
+                visible={modalVisible}
+                onCancel={() => setModalVisible(false)}
+                onOk={handleModalOk}
+                user={editUser}
+            />
         </>
     );
 };
 
-export default App;
+export default UserTable;

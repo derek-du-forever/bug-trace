@@ -11,7 +11,6 @@ export default function DashboardPage() {
 
     const role = useMemo(() => {
         if (!user) return null;
-        // 兼容 roles 可能是字符串或数组
         const r = Array.isArray(user.roles) ? user.roles[0] : user.roles;
         return r || null;
     }, [user]);

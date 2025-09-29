@@ -10,6 +10,7 @@ datasource db {
 // Enums
 enum BugStatus {
   open
+  assigned
   in_progress
   resolved
   closed
@@ -36,40 +37,30 @@ enum UserRole {
 }
 
 model User {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   username    String   @unique @db.VarChar(50)
   displayName String   @db.VarChar(100)
   password    String   @db.VarChar(255)
   roles       UserRole @default(tester)
-  
-  // Relations
-  createdBugs  Bug[]        @relation("BugCreator")
-  assignedBugs Bug[]        @relation("BugAssignee")
-  bugComments  BugComment[]
-  bugHistories BugHistory[]
+
+  // ❌ 不再声明 relation
 }
 
 model Bug {
-  id          String @id @default(uuid())
+  id          String      @id @default(uuid())
   title       String      @db.VarChar(200)
   description String      @db.Text
   status      BugStatus   @default(open)
   priority    BugPriority @default(medium)
   severity    BugSeverity @default(minor)
-  
-  // Foreign keys
-  creatorId  String   
-  assigneeId String?  
-  
+
+  creatorId  String
+  assigneeId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // Relations
-  creator   User         @relation("BugCreator", fields: [creatorId], references: [id])
-  assignee  User?        @relation("BugAssignee", fields: [assigneeId], references: [id])
-  comments  BugComment[]
-  histories BugHistory[]
-  
+
+  // ❌ 不再声明 relation
   @@index([status])
   @@index([priority])
   @@index([creatorId])
@@ -78,15 +69,13 @@ model Bug {
 }
 
 model BugComment {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   content   String   @db.Text
-  bugId     String   
-  userId    String   
+  bugId     String
+  userId    String
   createdAt DateTime @default(now())
-  
-  bug  Bug  @relation(fields: [bugId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-  
+
+  // ❌ 不再声明 relation
   @@index([bugId])
   @@index([createdAt])
 }
@@ -99,17 +88,15 @@ enum BugAction {
 }
 
 model BugHistory {
-  id        String @id @default(uuid())
-  bugId     String   
-  userId    String   
+  id        String   @id @default(uuid())
+  bugId     String
+  userId    String
   action    BugAction
   oldValue  String?  @db.Text
   newValue  String?  @db.Text
   createdAt DateTime @default(now())
 
-  bug  Bug  @relation(fields: [bugId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id])
-
+  // ❌ 不再声明 relation
   @@index([bugId])
   @@index([createdAt])
 }

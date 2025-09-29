@@ -4,6 +4,7 @@ import { Table, Select, message, Tag } from "antd";
 
 const STATUS_COLOR = {
   open: "default",
+  assigned: "blue",
   in_progress: "processing",
   resolved: "success",
   rejected: "error",
@@ -16,22 +17,22 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [assigningId, setAssigningId] = useState(null);
 
+  // 加载 Bugs 和 Developers
   const load = async () => {
     try {
       setLoading(true);
       const [bugsRes, devsRes] = await Promise.all([
         fetch(`/api/bugs?page=1&pageSize=100`),
-        fetch(`/api/users?roles=developer&page=1&pageSize=100`),
+        fetch(`/api/users?page=1&pageSize=100`),  // ✅ 不带 roles 参数
       ]);
 
-      if (!bugsRes.ok) throw new Error("Failed to load bugs");
-      if (!devsRes.ok) throw new Error("Failed to load developers");
+      if (!bugsRes.ok || !devsRes.ok) throw new Error("Failed to load data");
 
-      const bugs = await bugsRes.json().catch(() => ({ data: [] }));
-      const devs = await devsRes.json().catch(() => ({ data: [] }));
+      const bugsData = await bugsRes.json();
+      const devsData = await devsRes.json();
 
-      setList(bugs.items  || []);
-      setUsers(devs.items  || []);
+      setList(bugsData.items || []);
+      setUsers((devsData.data  || []).filter(u => u.roles === "developer"));  // ✅ 只要 developer
     } catch (err) {
       message.error(err.message || "Load failed");
     } finally {
@@ -39,28 +40,34 @@ export default function AdminDashboard() {
     }
   };
 
+
   useEffect(() => { load(); }, []);
 
+  // 开发者选项
   const devOptions = useMemo(
       () => (users || []).map(u => ({
         value: u.id,
-        label: `${u.displayName || u.username || u.id} (${u.username || "user"})`,
+        label: `${u.displayName || u.username} (${u.username})`,
       })),
       [users]
   );
 
+  // 分配 Bug
   const assign = async (id, developerId) => {
+    console.log("Assign bug", id, "to developerId", developerId);
     try {
       setAssigningId(id);
       const res = await fetch(`/api/bugs/${id}/assign`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ developerId: developerId || null }),
+        body: JSON.stringify({ developerId }),
       });
+
       if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload.error || "Assign failed");
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || "Failed to assign");
       }
+
       message.success("Assigned");
       await load();
     } catch (err) {
@@ -70,6 +77,7 @@ export default function AdminDashboard() {
     }
   };
 
+  // 表格列
   const columns = [
     { title: "Title", dataIndex: "title" },
     {
@@ -85,12 +93,11 @@ export default function AdminDashboard() {
       title: "Assign",
       render: (_, r) => (
           <Select
-              style={{ width: 260 }}
+              style={{ width: 240 }}
               placeholder="Pick developer"
-              allowClear
-              value={r?.assignee?.id || undefined}
+              value={r?.assignee?.id || undefined}   // ✅ 显示当前 assignee
               loading={assigningId === r.id}
-              disabled={assigningId === r.id || loading}
+              disabled={assigningId === r.id}
               onChange={(v) => assign(r.id, v)}
               options={devOptions}
           />

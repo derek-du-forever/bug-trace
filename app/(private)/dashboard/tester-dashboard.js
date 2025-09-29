@@ -1,74 +1,133 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Table, Button, Form, Input, Select, Modal, message } from "antd";
+import { Table, Button, Form, Input, Select, Modal, message, Tag } from "antd";
 
 const PRIORITY = ["low", "medium", "high", "critical"];
 const SEVERITY = ["minor", "major", "critical"];
+const STATUS_COLOR = {
+  open: "default",
+  in_progress: "processing",
+  resolved: "success",
+  rejected: "error",
+  closed: "gold",
+};
 
 export default function TesterDashboard() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
 
   const load = async () => {
-    setLoading(true);
-    const res = await fetch(`/api/bugs?page=1&pageSize=50`);
-    const data = await res.json();
-    setList(data.items || []);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/bugs?page=1&pageSize=50`);
+      if (!res.ok) throw new Error("Failed to load bugs");
+      const data = await res.json().catch(() => ({ data: [] }));
+      setList(data.items  || []);
+    } catch (err) {
+      message.error(err.message || "Load failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
 
   const submit = async () => {
-    const v = await form.validateFields();
-    const res = await fetch(`/api/bugs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(v),
-    });
-    if (res.ok) {
+    try {
+      const v = await form.validateFields();
+      setSubmitting(true);
+      const res = await fetch(`/api/bugs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(v),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || "Submit failed");
+      }
       message.success("Submitted");
       setOpen(false);
       form.resetFields();
-      load();
-    } else {
-      const { error } = await res.json();
-      message.error(error || "Failed");
+      await load();
+    } catch (err) {
+      message.error(err.message || "Submit failed");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const columns = [
     { title: "Title", dataIndex: "title" },
-    { title: "Status", dataIndex: "status" },
+    {
+      title: "Status",
+      dataIndex: "status",
+      render: v => <Tag color={STATUS_COLOR[v] || "default"}>{v}</Tag>,
+    },
     { title: "Priority", dataIndex: "priority" },
     { title: "Severity", dataIndex: "severity" },
-    { title: "Assignee", render: (_,_r)=> _r.assignee?.displayName || "-" },
+    { title: "Assignee", render: (_, r) => r?.assignee?.displayName || "-" },
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 12 }}>
-        <Button type="primary" onClick={() => setOpen(true)}>New Bug</Button>
+      <div style={{ padding: 24 }}>
+        <div style={{ marginBottom: 12 }}>
+          <Button type="primary" onClick={() => setOpen(true)}>New Bug</Button>
+        </div>
+        <Table rowKey="id" loading={loading} columns={columns} dataSource={list} />
+
+        <Modal
+            title="Submit Bug"
+            open={open}
+            okText="Submit"
+            onOk={submit}
+            okButtonProps={{ loading: submitting }}
+            onCancel={() => setOpen(false)}
+            destroyOnClose
+        >
+          <Form
+              form={form}
+              layout="vertical"
+              initialValues={{ priority: "medium", severity: "minor" }}
+          >
+            <Form.Item
+                name="title"
+                label="Title"
+                rules={[
+                  { required: true, message: "Please input title" },
+                  { max: 120, message: "Up to 120 characters" },
+                ]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+                name="description"
+                label="Description"
+                rules={[
+                  { required: true, message: "Please input description" },
+                  { max: 2000, message: "Up to 2000 characters" },
+                ]}
+            >
+              <Input.TextArea rows={4} />
+            </Form.Item>
+            <Form.Item
+                name="priority"
+                label="Priority"
+                rules={[{ required: true, message: "Please select priority" }]}
+            >
+              <Select options={PRIORITY.map(v => ({ value: v, label: v }))} />
+            </Form.Item>
+            <Form.Item
+                name="severity"
+                label="Severity"
+                rules={[{ required: true, message: "Please select severity" }]}
+            >
+              <Select options={SEVERITY.map(v => ({ value: v, label: v }))} />
+            </Form.Item>
+          </Form>
+        </Modal>
       </div>
-      <Table rowKey="id" loading={loading} columns={columns} dataSource={list} />
-      <Modal title="Submit Bug" open={open} onOk={submit} onCancel={()=>setOpen(false)}>
-        <Form form={form} layout="vertical" initialValues={{ priority: "medium", severity: "minor" }}>
-          <Form.Item name="title" label="Title" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          <Form.Item name="priority" label="Priority" rules={[{ required: true }]}>
-            <Select options={PRIORITY.map(v=>({value:v,label:v}))} />
-          </Form.Item>
-          <Form.Item name="severity" label="Severity" rules={[{ required: true }]}>
-            <Select options={SEVERITY.map(v=>({value:v,label:v}))} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
   );
 }

@@ -5,7 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
-#强制初始化数据库 慎用
+#
 npx prisma db push --force-reset
 
 

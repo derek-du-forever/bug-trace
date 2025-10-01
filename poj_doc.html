@@ -246,12 +246,7 @@
 
     <section id="group">
         <h2>1. Group Members</h2>
-        <p><strong>Project Type:</strong> <span class="editable">Solo Project</span></p>
-        <p><em>If group project, list all members:</em></p>
-        <ul>
-            <li class="editable">[Member 1 Name - Student ID]</li>
-            <li class="editable">[Member 2 Name - Student ID]</li>
-        </ul>
+        <p><strong>Project Type:</strong> <span class="editable">Team Project</span></p>
     </section>
 
     <section id="name">
@@ -418,26 +413,27 @@
         <h2>6. Application Architecture</h2>
 
         <h3>Page Structure</h3>
-        <pre class="architecture-box">
-app/
-├── dashboard/
-│   ├── page.js                    (Role-based route dispatcher)
-│   ├── admin-dashboard.js         (Admin: view all bugs, assign)
-│   ├── developer-dashboard.js     (Developer: assigned bugs, update status)
-│   └── tester-dashboard.js        (Tester: create bugs, assign)
-├── contexts/
-│   └── AuthContext.js             (User authentication state)
-├── api/
-│   ├── bugs/
-│   │   ├── route.js               (GET all, POST new)
-│   │   └── [id]/
-│   │       ├── assign/route.js    (PUT - assign developer)
-│   │       └── status/route.js    (PUT - update status)
-│   └── users/
-│       └── route.js               (GET users by role)
-└── login/
-    └── page.js                    (Login page)
-            </pre>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <thead>
+            <tr style="background: #f0f7ff;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #e8e8e8;">File/Directory</th>
+                <th style="padding: 10px; text-align: left; border: 1px solid #e8e8e8;">Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr><td colspan="2" style="padding: 10px; background: #f9f9f9; border: 1px solid #e8e8e8;"><strong>app/</strong></td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">dashboard/page.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">Role-based route dispatcher</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">dashboard/admin-dashboard.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">Admin: view all bugs, assign</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">dashboard/developer-dashboard.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">Developer: assigned bugs, update status</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">dashboard/tester-dashboard.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">Tester: create bugs, assign</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">contexts/AuthContext.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">User authentication state</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">api/bugs/route.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">GET all, POST new</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">api/bugs/[id]/assign/route.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">PUT - assign developer</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">api/bugs/[id]/status/route.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">PUT - update status</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">api/users/route.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">GET users by role</td></tr>
+            <tr><td style="padding: 10px; padding-left: 30px; border: 1px solid #e8e8e8;">login/page.js</td><td style="padding: 10px; border: 1px solid #e8e8e8;">Login page</td></tr>
+            </tbody>
+        </table>
 
         <h3>Component Hierarchy</h3>
         <div class="workflow">
@@ -637,8 +633,7 @@ app/
 
     <footer>
         <p><strong>Bug Tracking System - SAIT Web Development 2 Project</strong></p>
-        <p>Last Updated: <span class="editable">[Date]</span></p>
-        <p>Repository: <span class="editable">[GitHub URL]</span></p>
+        <p>Repository: <span class="editable">https://github.com/derek-du-forever</span></p>
     </footer>
 </div>
 </body>

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Tracking System - Project Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        header {
+            border-bottom: 4px solid #1890ff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #1890ff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .editable {
+            background: #fffacd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-style: italic;
+        }
+
+        h2 {
+            color: #1890ff;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        h3 {
+            color: #333;
+            font-size: 1.3em;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .feature-list {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tech-card {
+            background: #f0f7ff;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #1890ff;
+        }
+
+        .tech-card h4 {
+            color: #1890ff;
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .architecture-box {
+            background: #f9f9f9;
+            border: 2px solid #e8e8e8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .success-criteria {
+            background: #f6ffed;
+            border-left: 4px solid #52c41a;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .level-badge {
+            display: inline-block;
+            background: #1890ff;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #e8e8e8;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f7ff;
+            color: #1890ff;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .workflow {
+            background: #fff7e6;
+            border-left: 4px solid #faad14;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e8e8e8;
+            text-align: center;
+            color: #999;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Bug Tracking System</h1>
+        <p class="subtitle">SAIT Web Development 2 - Phase 1: Project Documentation</p>
+
+        <div class="info-grid">
+            <span class="info-label">Student Name:</span>
+            <span class="info-value editable">Guanmen Du,Yanlin Zhu,Yuandong Yang</span>
+
+            <span class="info-label">Course:</span>
+            <span class="info-value">Web Development 2</span>
+
+            <span class="info-label">Phase:</span>
+            <span class="info-value">1 - Project Selection, Planning, and Design</span>
+
+            <span class="info-label">Date:</span>
+            <span class="info-value editable">30th September 2025</span>
+        </div>
+    </header>
+
+    <section id="group">
+        <h2>1. Group Members</h2>
+        <p><strong>Project Type:</strong> <span class="editable">Solo Project</span></p>
+        <p><em>If group project, list all members:</em></p>
+        <ul>
+            <li class="editable">[Member 1 Name - Student ID]</li>
+            <li class="editable">[Member 2 Name - Student ID]</li>
+        </ul>
+    </section>
+
+    <section id="name">
+        <h2>2. Web Application Name</h2>
+        <p><strong>Bug Tracking System</strong></p>
+    </section>
+
+    <section id="description">
+        <h2>3. Project Description</h2>
+        <p>The Bug Tracking System is a role-based web application designed to streamline the bug reporting and resolution workflow in software development teams. The application addresses the real-world problem of managing software defects efficiently by providing a centralized platform where testers can report bugs, administrators can assign them to developers, and developers can track and update their status.</p>
+
+        <p>This system implements three distinct user roles:</p>
+        <ul>
+            <li><strong>Tester:</strong> Can create new bug reports and assign them to developers</li>
+            <li><strong>Developer:</strong> Can view assigned bugs and update their status</li>
+            <li><strong>Administrator:</strong> Can view all bugs, manage assignments, and oversee the entire workflow</li>
+        </ul>
+
+        <p>The application solves common pain points in bug management such as lost bug reports, unclear ownership, and lack of visibility into bug status. By centralizing bug tracking and enforcing clear workflows, teams can improve communication, reduce response times, and ensure no bugs fall through the cracks.</p>
+    </section>
+
+    <section id="features">
+        <h2>4. Features List</h2>
+
+        <div class="feature-list">
+            <h3>Core Features</h3>
+            <ol>
+                <li><strong>User Authentication and Authorization</strong>
+                    <ul>
+                        <li>Secure login system</li>
+                        <li>Role-based access control (Admin, Developer, Tester)</li>
+                        <li>User session management via AuthContext</li>
+                    </ul>
+                </li>
+
+                <li><strong>Bug Submission (Tester Role)</strong>
+                    <ul>
+                        <li>Create new bug reports with title and description</li>
+                        <li>Set priority levels: low, medium, high, critical</li>
+                        <li>Set severity levels: minor, major, critical</li>
+                        <li>Assign bugs to available developers</li>
+                        <li>Form validation (max 120 chars for title, 2000 for description)</li>
+                    </ul>
+                </li>
+
+                <li><strong>Bug Assignment (Admin & Tester Roles)</strong>
+                    <ul>
+                        <li>View complete list of all bugs in the system</li>
+                        <li>Assign or reassign bugs to available developers via dropdown</li>
+                        <li>See current assignee for each bug</li>
+                        <li>Filter bugs by status, priority, or assignee</li>
+                    </ul>
+                </li>
+
+                <li><strong>Bug Status Management (Developer Role)</strong>
+                    <ul>
+                        <li>View only bugs assigned to the logged-in developer</li>
+                        <li>Update bug status through workflow stages:</li>
+                        <li>Status options: in_progress, resolved, rejected, closed</li>
+                    </ul>
+                </li>
+
+                <li><strong>Dashboard Views</strong>
+                    <ul>
+                        <li>Role-specific dashboards with relevant information</li>
+                        <li>Real-time data updates after actions</li>
+                        <li>Sortable and filterable bug tables</li>
+                        <li>Color-coded status tags for quick visual identification</li>
+                    </ul>
+                </li>
+
+                <li><strong>Data Display</strong>
+                    <ul>
+                        <li>Bug title, description, priority, and severity</li>
+                        <li>Reporter (creator) information with display name</li>
+                        <li>Assignee information</li>
+                        <li>Current status with color-coded tags</li>
+                        <li>Timestamps for creation and last update</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-list">
+            <h3>User Experience Features</h3>
+            <ul>
+                <li>Loading states during data fetching and mutations</li>
+                <li>Success/error message notifications (Ant Design message component)</li>
+                <li>Responsive table layouts that adapt to screen size</li>
+                <li>Professional UI using Ant Design component library</li>
+                <li>Form validation with helpful error messages</li>
+                <li>Disabled states during operations to prevent duplicate submissions</li>
+                <li>Modal dialogs for bug creation form</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="technologies">
+        <h2>5. Technologies</h2>
+
+        <div class="tech-stack">
+            <div class="tech-card">
+                <h4>Framework</h4>
+                <ul>
+                    <li><strong>Next.js</strong> - React framework</li>
+                    <li><strong>React 18+</strong> - UI library</li>
+                </ul>
+            </div>
+
+            <div class="tech-card">
+                <h4>UI Components</h4>
+                <ul>
+                    <li><strong>Ant Design (antd)</strong></li>
+                    <li>Table, Form, Select, Modal</li>
+                    <li>Tag, Message, Button</li>
+                </ul>
+            </div>
+
+            <div class="tech-card">
+                <h4>State Management</h4>
+                <ul>
+                    <li><strong>React Context API</strong></li>
+                    <li>AuthContext for user state</li>
+                    <li>useState, useEffect, useMemo</li>
+                </ul>
+            </div>
+
+            <div class="tech-card">
+                <h4>API Communication</h4>
+                <ul>
+                    <li><strong>Fetch API</strong></li>
+                    <li>RESTful endpoints</li>
+                    <li>JSON data format</li>
+                </ul>
+            </div>
+
+            <div class="tech-card">
+                <h4>Database</h4>
+                <ul>
+                    <li class="editable">[Specify: Firebase/MongoDB/PostgreSQL]</li>
+                </ul>
+            </div>
+
+            <div class="tech-card">
+                <h4>Development Tools</h4>
+                <ul>
+                    <li><strong>Git</strong> - Version control</li>
+                    <li><strong>GitHub</strong> - Repository</li>
+                    <li><strong>VS Code</strong> - IDE</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>API Routes</h3>
+        <ul>
+            <li><code>GET/POST /api/bugs</code> - List and create bugs</li>
+            <li><code>PUT /api/bugs/[id]/assign</code> - Assign bug to developer</li>
+            <li><code>PUT /api/bugs/[id]/status</code> - Update bug status</li>
+            <li><code>GET /api/users</code> - Get users (filtered by role)</li>
+        </ul>
+    </section>
+
+    <section id="architecture">
+        <h2>6. Application Architecture</h2>
+
+        <h3>Page Structure</h3>
+        <pre class="architecture-box">
+app/
+├── dashboard/
+│   ├── page.js                    (Role-based route dispatcher)
+│   ├── admin-dashboard.js         (Admin: view all bugs, assign)
+│   ├── developer-dashboard.js     (Developer: assigned bugs, update status)
+│   └── tester-dashboard.js        (Tester: create bugs, assign)
+├── contexts/
+│   └── AuthContext.js             (User authentication state)
+├── api/
+│   ├── bugs/
+│   │   ├── route.js               (GET all, POST new)
+│   │   └── [id]/
+│   │       ├── assign/route.js    (PUT - assign developer)
+│   │       └── status/route.js    (PUT - update status)
+│   └── users/
+│       └── route.js               (GET users by role)
+└── login/
+    └── page.js                    (Login page)
+            </pre>
+
+        <h3>Component Hierarchy</h3>
+        <div class="workflow">
+            <p><strong>Dashboard Page (page.js):</strong></p>
+            <ul>
+                <li>Reads current user from AuthContext</li>
+                <li>Determines user role (admin/developer/tester)</li>
+                <li>Conditionally renders appropriate dashboard component</li>
+            </ul>
+
+            <p><strong>Admin Dashboard:</strong></p>
+            <ul>
+                <li>Fetches all bugs and all developers</li>
+                <li>Displays complete bug list in table</li>
+                <li>Provides assignment dropdown for each bug</li>
+                <li>Shows current assignee</li>
+            </ul>
+
+            <p><strong>Developer Dashboard:</strong></p>
+            <ul>
+                <li>Fetches only bugs assigned to current user</li>
+                <li>Displays filtered bug list</li>
+                <li>Provides status update dropdown</li>
+                <li>Shows reporter information</li>
+            </ul>
+
+            <p><strong>Tester Dashboard:</strong></p>
+            <ul>
+                <li>Displays all bugs</li>
+                <li>"New Bug" button opens modal form</li>
+                <li>Form includes title, description, priority, severity</li>
+                <li>Assignment capability for each bug</li>
+            </ul>
+        </div>
+
+        <h3>Data Flow</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Action</th>
+                <th>Flow</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><strong>User Login</strong></td>
+                <td>User logs in → AuthContext stores user data (id, username, roles) → Dashboard renders based on role</td>
+            </tr>
+            <tr>
+                <td><strong>Bug Creation</strong></td>
+                <td>Tester fills form → POST to /api/bugs → Backend creates record → Success message → Dashboard refreshes</td>
+            </tr>
+            <tr>
+                <td><strong>Bug Assignment</strong></td>
+                <td>Select developer → PUT to /api/bugs/[id]/assign with developerId → Backend updates → Success → Refresh</td>
+            </tr>
+            <tr>
+                <td><strong>Status Update</strong></td>
+                <td>Developer selects status → PUT to /api/bugs/[id]/status → Backend updates → Success → Refresh</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3>Database Schema (Conceptual)</h3>
+        <pre>
+<strong>Users Collection:</strong>
+{
+  id: string,
+  username: string,
+  displayName: string,
+  roles: string ("admin" | "developer" | "tester"),
+  email: string,
+  createdAt: timestamp
+}
+
+<strong>Bugs Collection:</strong>
+{
+  id: string,
+  title: string (max 120 chars),
+  description: string (max 2000 chars),
+  priority: string ("low" | "medium" | "high" | "critical"),
+  severity: string ("minor" | "major" | "critical"),
+  status: string ("open" | "assigned" | "in_progress" | 
+                  "resolved" | "rejected" | "closed"),
+  creatorId: string (ref to Users),
+  assigneeId: string (ref to Users, nullable),
+  createdAt: timestamp,
+  updatedAt: timestamp
+}
+            </pre>
+
+        <h3>Security Considerations</h3>
+        <ul>
+            <li>Role-based access control enforced on frontend and backend</li>
+            <li>API endpoints validate user permissions before operations</li>
+            <li>Input validation on all form submissions</li>
+            <li>Prevention of SQL injection through parameterized queries</li>
+            <li>XSS protection via React's automatic escaping</li>
+            <li>Session management through secure authentication</li>
+        </ul>
+    </section>
+
+    <section id="timeline">
+        <h2>7. Development Timeline</h2>
+        <table>
+            <thead>
+            <tr>
+                <th>Week</th>
+                <th>Tasks</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><strong>Week 1-2</strong></td>
+                <td>
+                    <ul>
+                        <li>Set up Next.js project structure</li>
+                        <li>Implement authentication system</li>
+                        <li>Create basic CRUD operations for bugs</li>
+                        <li>Set up database and API routes</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Week 3</strong></td>
+                <td>
+                    <ul>
+                        <li>Implement role-based dashboards</li>
+                        <li>Integrate Ant Design components</li>
+                        <li>Build bug list tables</li>
+                        <li>Create bug submission form</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Week 4</strong></td>
+                <td>
+                    <ul>
+                        <li>Implement assignment workflow</li>
+                        <li>Build status update functionality</li>
+                        <li>Add filtering and sorting</li>
+                        <li>Improve error handling and UX</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Week 5</strong></td>
+                <td>
+                    <ul>
+                        <li>Testing and bug fixes</li>
+                        <li>Code optimization and refactoring</li>
+                        <li>Deploy to production</li>
+                        <li>Documentation and presentation prep</li>
+                    </ul>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="success">
+        <h2>8. Success Criteria</h2>
+        <div class="success-criteria">
+            <p><strong>The project will be considered successful when:</strong></p>
+            <ul>
+                <li>All three user roles can successfully log in and access their respective dashboards</li>
+                <li>Testers can create bugs with all required fields and proper validation</li>
+                <li>Admins and testers can assign/reassign bugs to developers</li>
+                <li>Developers can view only their assigned bugs and update status</li>
+                <li>All CRUD operations work reliably without data loss</li>
+                <li>UI is responsive and works on desktop and mobile devices</li>
+                <li>Application provides appropriate feedback for user actions</li>
+                <li>No critical bugs or security vulnerabilities</li>
+                <li>Application is deployed and accessible online via public URL</li>
+                <li>Code is well-documented and follows best practices</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="level">
+        <h2>9. Technology Level Classification</h2>
+        <span class="level-badge">Advanced Level (Weeks 1-10)</span>
+
+        <p style="margin-top: 20px;"><strong>This project qualifies as Advanced Level because it implements:</strong></p>
+        <ul>
+            <li>✓ User authentication and authorization system</li>
+            <li>✓ Database integration for persistent data storage</li>
+            <li>✓ Additional UI component library (Ant Design)</li>
+            <li>✓ Role-based access control with three distinct user types</li>
+            <li>✓ RESTful API backend with multiple endpoints</li>
+            <li>✓ Complex state management using Context API</li>
+            <li>✓ Form validation and error handling</li>
+        </ul>
+
+        <p>The project goes beyond the Intermediate level (API integration only) by implementing a complete authentication system, role-based permissions, and a full CRUD workflow with multiple user types.</p>
+    </section>
+
+    <footer>
+        <p><strong>Bug Tracking System - SAIT Web Development 2 Project</strong></p>
+        <p>Last Updated: <span class="editable">[Date]</span></p>
+        <p>Repository: <span class="editable">[GitHub URL]</span></p>
+    </footer>
+</div>
+</body>
+</html>

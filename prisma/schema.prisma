@@ -43,7 +43,6 @@ model User {
   password    String   @db.VarChar(255)
   roles       UserRole @default(tester)
 
-  // ❌ 不再声明 relation
 }
 
 model Bug {
@@ -60,7 +59,6 @@ model Bug {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // ❌ 不再声明 relation
   @@index([status])
   @@index([priority])
   @@index([creatorId])
@@ -75,7 +73,6 @@ model BugComment {
   userId    String
   createdAt DateTime @default(now())
 
-  // ❌ 不再声明 relation
   @@index([bugId])
   @@index([createdAt])
 }
@@ -96,7 +93,6 @@ model BugHistory {
   newValue  String?  @db.Text
   createdAt DateTime @default(now())
 
-  // ❌ 不再声明 relation
   @@index([bugId])
   @@index([createdAt])
 }

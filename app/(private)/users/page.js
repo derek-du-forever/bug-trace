@@ -133,8 +133,9 @@ const UserTable = () => {
                 <Form.Item label="Roles" name="roles">
                     <Radio.Group>
                         <Radio value="">All</Radio>
-                        <Radio value="user">User</Radio>
                         <Radio value="admin">Admin</Radio>
+                        <Radio value="developer">Developer</Radio>
+                        <Radio value="tester">Tester</Radio>
                     </Radio.Group>
                 </Form.Item>
                 <Form.Item>

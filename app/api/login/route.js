@@ -3,7 +3,7 @@ import { SignJWT } from "jose";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-const SECRET_KEY = new TextEncoder().encode(process.env.SECRET_KEY); // jose 需要 Uint8Array
+const SECRET_KEY = new TextEncoder().encode(process.env.SECRET_KEY);
 
 export async function POST(req) {
     const { username, password } = await req.json();

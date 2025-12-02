@@ -1,10 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
-
 First, run the development server:
 
 ```bash
+#
+npx prisma db push --force-reset
+
+
 npm run dev
 # or
 yarn dev
@@ -47,7 +50,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 -   UI lib: https://ant.design/components/overview/
 
 -   How to get current user
-
 ```javascript
 //import
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -55,3 +57,9 @@ import { useAuth } from "@/app/contexts/AuthContext";
 //user is current user, consist of id,username,displayName,roles
 const { user } = useAuth();
 ```
+
+DATABASE_URL="mysql://root:123456@localhost:3306/bugtracedb"
+https://admin.alwaysdata.com/database/?type=mysql
+DATABASE_URL="mysql://bugtrace:bugtrace_2025@mysql-bugtrace.alwaysdata.net:3306/bugtrace_react"
+
+https://bug-trace-hbesa5vno-yuandong-dongs-projects.vercel.app/login

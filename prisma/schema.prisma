@@ -3,14 +3,96 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+// Enums
+enum BugStatus {
+  open
+  assigned
+  in_progress
+  resolved
+  closed
+  rejected
+}
+
+enum BugPriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum BugSeverity {
+  minor
+  major
+  critical
+}
+
+enum UserRole {
+  admin
+  developer
+  tester
+}
+
 model User {
-  id          String @id @db.Char(26)
-  username    String @unique @db.VarChar(50)
-  displayName String @db.VarChar(100)
-  password    String @db.VarChar(255)
-  roles       String @db.VarChar(50)
+  id          String   @id @default(uuid())
+  username    String   @unique @db.VarChar(50)
+  displayName String   @db.VarChar(100)
+  password    String   @db.VarChar(255)
+  roles       UserRole @default(tester)
+
+}
+
+model Bug {
+  id          String      @id @default(uuid())
+  title       String      @db.VarChar(200)
+  description String      @db.Text
+  status      BugStatus   @default(open)
+  priority    BugPriority @default(medium)
+  severity    BugSeverity @default(minor)
+
+  creatorId  String
+  assigneeId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([priority])
+  @@index([creatorId])
+  @@index([assigneeId])
+  @@index([createdAt])
+}
+
+model BugComment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  bugId     String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([bugId])
+  @@index([createdAt])
+}
+
+enum BugAction {
+  created
+  assigned
+  status_changed
+  commented
+}
+
+model BugHistory {
+  id        String   @id @default(uuid())
+  bugId     String
+  userId    String
+  action    BugAction
+  oldValue  String?  @db.Text
+  newValue  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([bugId])
+  @@index([createdAt])
 }

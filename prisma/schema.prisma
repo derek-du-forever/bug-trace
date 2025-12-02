@@ -41,7 +41,7 @@ model User {
   username    String   @unique @db.VarChar(50)
   displayName String   @db.VarChar(100)
   password    String   @db.VarChar(255)
-  roles       UserRole @default(tester)
+  roles       String @db.VarChar(50)
 
 }
 

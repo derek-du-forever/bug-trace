@@ -1,39 +1,39 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+import { requireUser } from "@/lib/guard";
 import { ulid } from "ulid";
-import { requireRole } from "@/lib/guard";
-
-const ALLOW = new Set(["in_progress", "resolved", "rejected", "closed"]);
 
 export async function PUT(req, { params }) {
-  const dev = await requireRole(req, "developer");
+  const user = await requireUser(req);
   const { id } = params;
   const { status } = await req.json();
 
-  if (!ALLOW.has(status)) {
-    return NextResponse.json({ error: "invalid status" }, { status: 400 });
+  // 1. 获取旧状态
+  const bug = await prisma.bug.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+
+  if (!bug) {
+    return Response.json({ error: "Bug not found" }, { status: 404 });
   }
 
-  const bug = await prisma.bug.findUnique({ where: { id } });
-  if (!bug || bug.assigneeId !== dev.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
+  // ⭐ 2. 允许修改成任何合法状态（包括 open / assigned）
   const updated = await prisma.bug.update({
     where: { id },
+    data: { status },
+  });
+
+  // 3. 写入历史记录
+  await prisma.bugHistory.create({
     data: {
-      status,
-      histories: {
-        create: {
-          id: ulid(),
-          userId: dev.id,
-          action: "status_changed",
-          oldValue: bug.status,
-          newValue: status,
-        },
-      },
+      id: ulid(),
+      bugId: id,
+      userId: user.id,
+      action: "status_changed",
+      oldValue: bug.status,
+      newValue: status,
     },
   });
 
-  return NextResponse.json({ id: updated.id, status: updated.status });
+  return Response.json(updated);
 }

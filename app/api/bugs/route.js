@@ -153,12 +153,7 @@ export async function POST(req) {
             userId: user.id,
             action: "created",
             oldValue: null,
-            newValue: JSON.stringify({
-                title: bug.title,
-                priority: bug.priority,
-                severity: bug.severity,
-                description: bug.description
-            }),
+            newValue: "created",   // ⭐ 关键，只显示 created
         },
     });
 

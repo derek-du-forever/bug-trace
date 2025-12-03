@@ -1,56 +1,66 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import { ulid } from "ulid";
 import { requireRole } from "@/lib/guard";
 
 export async function PUT(req, { params }) {
-  const user = await requireRole(req, ["admin", "tester"]); // ✅ 允许 admin/tester
+  const user = await requireRole(req, ["admin", "tester"]); // 执行操作的人
   const { id } = params; // bugId
   const { developerId } = await req.json();
-
-  console.log("Receive assign:", id, "to developerId:", developerId);
 
   if (!developerId) {
     return NextResponse.json({ error: "developerId required" }, { status: 400 });
   }
 
-  // 校验 developer 是否存在
-  const dev = await prisma.user.findUnique({ where: { id: developerId } });
-  if (!dev) {
+  // 1. 新 assignee 是否存在？
+  const newAssignee = await prisma.user.findUnique({
+    where: { id: developerId },
+    select: { id: true, username: true, displayName: true }
+  });
+
+  if (!newAssignee) {
     return NextResponse.json({ error: "Developer not found" }, { status: 400 });
   }
 
-  try {
-    // 1️⃣ 更新 bug
-    const bug = await prisma.bug.update({
-      where: { id },
-      data: {
-        assigneeId: developerId,
-        status: "assigned",
-      },
-    });
+  // 2. 取旧 assignee
+  const bugBefore = await prisma.bug.findUnique({
+    where: { id },
+    select: { assigneeId: true }
+  });
 
-    // 2️⃣ 单独写入 history
-    await prisma.bugHistory.create({
-      data: {
-        id: ulid(),
-        bugId: id,
-        userId: user.id,
-        action: "assigned",
-        newValue: `assigned:${developerId}`,
-      },
-    });
+  let oldAssigneeUser = null;
 
-    return NextResponse.json({
-      id: bug.id,
-      status: bug.status,
-      assigneeId: bug.assigneeId,
+  if (bugBefore?.assigneeId) {
+    oldAssigneeUser = await prisma.user.findUnique({
+      where: { id: bugBefore.assigneeId },
+      select: { id: true, username: true, displayName: true }
     });
-  } catch (err) {
-    console.error("Assign error:", err);
-    return NextResponse.json(
-      { error: "Failed to assign", detail: err.message },
-      { status: 500 }
-    );
   }
+
+  // 3. 更新 bug
+  const updatedBug = await prisma.bug.update({
+    where: { id },
+    data: {
+      assigneeId: developerId,
+      status: "assigned",
+    },
+  });
+
+  // 4. 写入 history（⭐ 不依赖外键，不改数据库结构）
+  await prisma.bugHistory.create({
+    data: {
+      id: ulid(),
+      bugId: id,
+      userId: user.id, // 谁执行的动作
+      action: "assigned",
+      oldValue: oldAssigneeUser?.displayName ?? null,
+      newValue: newAssignee.displayName,
+    },
+  });
+
+  return NextResponse.json({
+    id: updatedBug.id,
+    status: updatedBug.status,
+    assigneeId: updatedBug.assigneeId,
+  });
 }

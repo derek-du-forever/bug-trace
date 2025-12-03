@@ -1,206 +1,329 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { Table, Button, Form, Input, Select, Modal, message, Tag } from "antd";
+import { Table, Button, Form, Input, Select, Modal, message } from "antd";
 
 const PRIORITY = ["low", "medium", "high", "critical"];
 const SEVERITY = ["minor", "major", "critical"];
-const STATUS_COLOR = {
-  open: "default",
-  in_progress: "processing",
-  resolved: "success",
-  rejected: "error",
-  closed: "gold",
-};
+const STATUS_OPTIONS = [
+    "open",
+    "assigned",
+    "in_progress",
+    "resolved",
+    "rejected",
+    "closed",
+];
 
 export default function TesterDashboard() {
-  const [list, setList] = useState([]);
-  const [loading, setLoading] = useState(false);
+    const [list, setList] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [descTimers, setDescTimers] = useState({});
+    const [assigningId, setAssigningId] = useState(null);
+    const [devOptions, setDevOptions] = useState([]);
 
-  // 新建 Bug 弹窗
-  const [open, setOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [form] = Form.useForm();
+    // 🟦 Create Bug modal
+    const [openCreate, setOpenCreate] = useState(false);
+    const [createSubmitting, setCreateSubmitting] = useState(false);
+    const [createForm] = Form.useForm();
 
-  // 指派状态
-  const [assigningId, setAssigningId] = useState(null);
-  const [devOptions, setDevOptions] = useState([]);
+    // 🟦 History modal
+    const [historyOpen, setHistoryOpen] = useState(false);
+    const [historyList, setHistoryList] = useState([]);
 
-  // 加载 bug 列表
-  const load = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/bugs?page=1&pageSize=50`);
-      if (!res.ok) throw new Error("Failed to load bugs");
-      const data = await res.json().catch(() => ({ data: [] }));
-      setList(data.items || []);
-    } catch (err) {
-      message.error(err.message || "Load failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // =============================================================
+    // Load Bugs
+    // =============================================================
+    const load = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch(`/api/bugs?page=1&pageSize=50`);
+            const data = await res.json();
+            setList(data.items || []);
+        } catch {
+            message.error("Failed to load bugs");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  // 加载开发者选项
-  const loadDevelopers = async () => {
-    try {
-      const res = await fetch(`/api/users?roles=developer`);
-      if (!res.ok) throw new Error("Failed to load developers");
-      const data = await res.json();
-      setDevOptions(
-        (data.data || []).map((d) => ({
-          value: d.id,
-          label: d.displayName || d.username,
-        }))
-      );
-    } catch (err) {
-      message.error("Failed to load developers");
-    }
-  };
+    // Load Developers
+    const loadDevelopers = async () => {
+        try {
+            const res = await fetch(`/api/users?roles=developer`);
+            const data = await res.json();
+            setDevOptions(
+                (data.data || []).map((d) => ({
+                    value: d.id,
+                    label: d.displayName || d.username,
+                }))
+            );
+        } catch {
+            message.error("Failed to load developers");
+        }
+    };
 
-  useEffect(() => {
-    load();
-    loadDevelopers();
-  }, []);
+    useEffect(() => {
+        load();
+        loadDevelopers();
+    }, []);
 
-  // 提交 Bug
-  const submit = async () => {
-    try {
-      const v = await form.validateFields();
-      setSubmitting(true);
-      const res = await fetch(`/api/bugs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(v),
-      });
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({}));
-        throw new Error(error || "Submit failed");
-      }
-      message.success("Submitted");
-      setOpen(false);
-      form.resetFields();
-      await load();
-    } catch (err) {
-      message.error(err.message || "Submit failed");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    // =============================================================
+    // Assign Developer
+    // =============================================================
+    const assign = async (id, developerId) => {
+        try {
+            setAssigningId(id);
+            const res = await fetch(`/api/bugs/${id}/assign`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ developerId }),
+            });
 
-  // 执行指派
-  const assign = async (id, developerId) => {
-    try {
-      setAssigningId(id);
-      const res = await fetch(`/api/bugs/${id}/assign`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ developerId }),
-      });
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({}));
-        throw new Error(error || "Assign failed");
-      }
-      message.success("Assigned");
-      await load();
-    } catch (err) {
-      message.error(err.message || "Assign failed");
-    } finally {
-      setAssigningId(null);
-    }
-  };
+            if (!res.ok) {
+                const { error } = await res.json().catch(() => ({}));
+                throw new Error(error || "Assign failed");
+            }
 
-  const columns = [
-    { title: "Title", dataIndex: "title" },
-    {
-      title: "Status",
-      dataIndex: "status",
-      render: (v) => <Tag color={STATUS_COLOR[v] || "default"}>{v}</Tag>,
-    },
-    { title: "Priority", dataIndex: "priority" },
-    { title: "Severity", dataIndex: "severity" },
-    { title: "Assignee", render: (_, r) => r?.assignee?.displayName || "-" },
-    {
-      title: "Assign",
-      render: (_, r) => (
-        <Select
-          style={{ width: 240 }}
-          placeholder="Pick developer"
-          value={r?.assignee?.id || undefined} // ✅ 显示当前 assignee
-          loading={assigningId === r.id}
-          disabled={assigningId === r.id}
-          onChange={(v) => assign(r.id, v)}
-          options={devOptions}
-        />
-      ),
-    },
-  ];
+            message.success("Assigned");
+            await load();
+        } catch (err) {
+            message.error(err.message);
+        } finally {
+            setAssigningId(null);
+        }
+    };
 
-  return (
-    <div style={{ padding: 24 }}>
-      <div style={{ marginBottom: 12 }}>
-        <Button type="primary" onClick={() => setOpen(true)}>
-          New Bug
-        </Button>
-      </div>
+    // =============================================================
+    // Update Status
+    // =============================================================
+    const updateStatus = async (id, newStatus) => {
+        try {
+            const res = await fetch(`/api/bugs/${id}/status`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: newStatus }),
+            });
 
-      <Table
-        rowKey="id"
-        loading={loading}
-        columns={columns}
-        dataSource={list}
-      />
+            if (!res.ok) {
+                const { error } = await res.json().catch(() => ({}));
+                throw new Error(error || "Update status failed");
+            }
 
-      {/* 新建 Bug Modal */}
-      <Modal
-        title="Submit Bug"
-        open={open}
-        okText="Submit"
-        onOk={submit}
-        okButtonProps={{ loading: submitting }}
-        onCancel={() => setOpen(false)}
-        destroyOnClose
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ priority: "medium", severity: "minor" }}
-        >
-          <Form.Item
-            name="title"
-            label="Title"
-            rules={[
-              { required: true, message: "Please input title" },
-              { max: 120, message: "Up to 120 characters" },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label="Description"
-            rules={[
-              { required: true, message: "Please input description" },
-              { max: 2000, message: "Up to 2000 characters" },
-            ]}
-          >
-            <Input.TextArea rows={4} />
-          </Form.Item>
-          <Form.Item
-            name="priority"
-            label="Priority"
-            rules={[{ required: true, message: "Please select priority" }]}
-          >
-            <Select options={PRIORITY.map((v) => ({ value: v, label: v }))} />
-          </Form.Item>
-          <Form.Item
-            name="severity"
-            label="Severity"
-            rules={[{ required: true, message: "Please select severity" }]}
-          >
-            <Select options={SEVERITY.map((v) => ({ value: v, label: v }))} />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
-  );
+            message.success("Status updated");
+            await load();
+        } catch (err) {
+            message.error(err.message);
+        }
+    };
+
+    // =============================================================
+    // Update Description (debounced)
+    // =============================================================
+    const debouncedUpdateDescription = (id, value) => {
+        if (descTimers[id]) clearTimeout(descTimers[id]);
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/bugs/${id}/comments`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: value }),
+                });
+
+                if (!res.ok) {
+                    const { error } = await res.json().catch(() => ({}));
+                    throw new Error(error || "Update failed");
+                }
+
+                message.success("Description updated");
+                await load();
+            } catch (err) {
+                message.error(err.message);
+            }
+        }, 500);
+
+        setDescTimers((prev) => ({ ...prev, [id]: timer }));
+    };
+
+    // =============================================================
+    // Load History
+    // =============================================================
+    const openHistory = async (bugId) => {
+        try {
+            const res = await fetch(`/api/bugs/${bugId}/history`);
+            const data = await res.json();
+            setHistoryList(data || []);
+            setHistoryOpen(true);
+        } catch {
+            message.error("Failed to load history");
+        }
+    };
+
+    // =============================================================
+    // Create Bug
+    // =============================================================
+    const createBug = async () => {
+        try {
+            const values = await createForm.validateFields();
+            setCreateSubmitting(true);
+
+            const res = await fetch(`/api/bugs`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(values),
+            });
+
+            if (!res.ok) {
+                const { error } = await res.json().catch(() => ({}));
+                throw new Error(error || "Create failed");
+            }
+
+            message.success("Bug created");
+            setOpenCreate(false);
+            createForm.resetFields();
+            await load();
+        } catch (err) {
+            message.error(err.message);
+        } finally {
+            setCreateSubmitting(false);
+        }
+    };
+
+    // =============================================================
+    // Table Columns
+    // =============================================================
+    const columns = [
+        { title: "Title", dataIndex: "title" },
+        {
+            title: "Status",
+            dataIndex: "status",
+            render: (value, record) => (
+                <Select
+                    style={{ width: 150 }}
+                    value={value}
+                    onChange={(v) => updateStatus(record.id, v)}
+                    options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+                />
+            ),
+        },
+        { title: "Priority", dataIndex: "priority" },
+        { title: "Severity", dataIndex: "severity" },
+        { title: "Assignee", render: (_, r) => r?.assignee?.displayName || "-" },
+        {
+            title: "Assign",
+            render: (_, r) => (
+                <Select
+                    style={{ width: 240 }}
+                    value={r?.assignee?.id}
+                    placeholder="Pick developer"
+                    loading={assigningId === r.id}
+                    disabled={assigningId === r.id}
+                    onChange={(v) => assign(r.id, v)}
+                    options={devOptions}
+                />
+            ),
+        },
+        {
+            title: "Description",
+            dataIndex: "description",
+            render: (value, record) => (
+                <Input
+                    defaultValue={value}
+                    onChange={(e) =>
+                        debouncedUpdateDescription(record.id, e.target.value)
+                    }
+                    style={{ width: 250 }}
+                />
+            ),
+        },
+        {
+            title: "History",
+            render: (_, r) => (
+                <Button onClick={() => openHistory(r.id)}>View</Button>
+            ),
+        },
+    ];
+
+    // =============================================================
+    // UI Render
+    // =============================================================
+    return (
+        <div style={{ padding: 24 }}>
+            {/* Create Button */}
+            <div style={{ marginBottom: 12 }}>
+                <Button type="primary" onClick={() => setOpenCreate(true)}>
+                    New Bug
+                </Button>
+            </div>
+
+            <Table rowKey="id" loading={loading} columns={columns} dataSource={list} />
+
+            {/* =======================================================
+                Create Bug Modal
+            ======================================================= */}
+            <Modal
+                open={openCreate}
+                onCancel={() => setOpenCreate(false)}
+                onOk={createBug}
+                confirmLoading={createSubmitting}
+                title="Create New Bug"
+                okText="Create"
+                width={450}
+            >
+                <Form layout="vertical" form={createForm}>
+                    <Form.Item
+                        name="title"
+                        label="Title"
+                        rules={[{ required: true, message: "Title required" }]}
+                    >
+                        <Input placeholder="Bug title" />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="priority"
+                        label="Priority"
+                        rules={[{ required: true }]}
+                    >
+                        <Select options={PRIORITY.map((p) => ({ value: p, label: p }))} />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="severity"
+                        label="Severity"
+                        rules={[{ required: true }]}
+                    >
+                        <Select options={SEVERITY.map((s) => ({ value: s, label: s }))} />
+                    </Form.Item>
+
+                    <Form.Item name="description" label="Description">
+                        <Input.TextArea rows={3} placeholder="Description" />
+                    </Form.Item>
+                </Form>
+            </Modal>
+            
+            <Modal
+                open={historyOpen}
+                onCancel={() => setHistoryOpen(false)}
+                title="History"
+                footer={null}
+                width={600}
+            >
+                {historyList.map((h) => (
+                    <div
+                        key={h.id}
+                        style={{
+                            padding: "10px 0",
+                            borderBottom: "1px solid #eee",
+                        }}
+                    >
+                        <div><b>Action:</b> {h.action}</div>
+                        <div><b>Old:</b> {h.oldValue ?? "-"}</div>
+                        <div><b>New:</b> {h.newValue ?? "-"}</div>
+                        <div><b>User:</b> {h?.user?.displayName || h?.user?.username || h.userId}</div>
+                        <div><b>Time:</b> {new Date(h.createdAt).toLocaleString()}</div>
+                    </div>
+                ))}
+            </Modal>
+        </div>
+    );
 }

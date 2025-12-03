@@ -7,7 +7,6 @@ export async function PUT(req, { params }) {
   const { id } = params;
   const { status } = await req.json();
 
-  // 1. 获取旧状态
   const bug = await prisma.bug.findUnique({
     where: { id },
     select: { status: true },
@@ -17,13 +16,11 @@ export async function PUT(req, { params }) {
     return Response.json({ error: "Bug not found" }, { status: 404 });
   }
 
-  // ⭐ 2. 允许修改成任何合法状态（包括 open / assigned）
   const updated = await prisma.bug.update({
     where: { id },
     data: { status },
   });
 
-  // 3. 写入历史记录
   await prisma.bugHistory.create({
     data: {
       id: ulid(),

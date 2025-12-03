@@ -22,7 +22,7 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, context) {
-  const { params } = await context;    // ⭐ 必须 await
+  const { params } = await context;
   const { id } = params;
 
   const user = await requireUser(req);
@@ -31,7 +31,6 @@ export async function POST(req, context) {
   if (!content) {
     return Response.json({ error: "content required" }, { status: 400 });
   }
-  // 1. 创建评论
   const created = await prisma.bugComment.create({
     data: {
       id: ulid(),
@@ -41,10 +40,9 @@ export async function POST(req, context) {
     },
   });
 
-  // 2. 取上一条评论历史（修复关键 bug）
   const lastCommentHistory = await prisma.bugHistory.findFirst({
     where: {
-      bugId: id,          // ⭐ 修复点：必须使用 id
+      bugId: id,
       action: "commented",
     },
     orderBy: { createdAt: "desc" },
@@ -57,8 +55,8 @@ export async function POST(req, context) {
       bugId: id,
       userId: user.id,
       action: "commented",
-      oldValue: lastCommentHistory?.newValue ?? null,  // ⭐ Old 显示上一条评论内容
-      newValue: content.slice(0, 200),                 // ⭐ New = 当前评论
+      oldValue: lastCommentHistory?.newValue ?? null,
+      newValue: content.slice(0, 200),
     },
   });
 

@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ulid } from "ulid";
 import bcrypt from "bcrypt";
-import { requireUser } from "@/lib/guard";   // ⭐ 必须加入
+import { requireUser } from "@/lib/guard";
 
 export async function GET(req) {
-    const currentUser = await requireUser(req); // ⭐ 获取当前登录者
+    const currentUser = await requireUser(req);
 
     const { searchParams } = new URL(req.url);
     const username = searchParams.get("username");
@@ -32,7 +32,6 @@ export async function GET(req) {
         whereList.push({ roles });
     }
 
-    // ⭐ 非 admin 不能看到 admin 用户
     if (currentUser.roles !== "admin") {
         whereList.push({
             roles: { not: "admin" },
@@ -65,7 +64,6 @@ export async function POST(req) {
     const currentUser = await requireUser(req);
     const body = await req.json();
 
-    // ⭐ 非 admin 用户不能创建 admin 账号
     if (currentUser.roles !== "admin" && body.roles === "admin") {
         return NextResponse.json(
             { error: "Permission denied: Cannot create admin user" },

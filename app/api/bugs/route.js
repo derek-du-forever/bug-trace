@@ -146,14 +146,13 @@ export async function POST(req) {
         },
     });
 
-    // Write history
     await prisma.bugHistory.create({
         data: {
             bugId: bug.id,
             userId: user.id,
             action: "created",
             oldValue: null,
-            newValue: "created",   // ⭐ 关键，只显示 created
+            newValue: "created",
         },
     });
 

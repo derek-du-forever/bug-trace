@@ -1,12 +1,13 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { Table, Button, Form, Input, Radio, Popconfirm } from "antd";
+
+import React, {useState, useEffect, useCallback} from "react";
+import {Table, Button, Form, Input, Radio, Popconfirm, message} from "antd";
 import CreateOrEditUserModal from "./create-or-edit-user.modal";
 
 const columns = (onEdit, onDelete) => [
-    { title: "Username", dataIndex: "username", key: "username" },
-    { title: "Display Name", dataIndex: "displayName", key: "displayName" },
-    { title: "Roles", dataIndex: "roles", key: "roles" },
+    {title: "Username", dataIndex: "username", key: "username"},
+    {title: "Display Name", dataIndex: "displayName", key: "displayName"},
+    {title: "Roles", dataIndex: "roles", key: "roles"},
     {
         title: "Action",
         key: "action",
@@ -15,27 +16,30 @@ const columns = (onEdit, onDelete) => [
                 <Button type="link" onClick={() => onEdit(record)}>
                     Edit
                 </Button>
-                <Popconfirm
-                    title="Delete the user"
-                    description="Are you sure to delete this user?"
-                    onConfirm={() => onDelete(record)}
-                    okText="Yes"
-                    cancelText="No"
-                >
-                    <Button danger type="link">
-                        Delete
-                    </Button>
-                </Popconfirm>
+
+                {record.roles !== "admin" && (
+                    <Popconfirm
+                        title="Delete the user"
+                        description="Are you sure to delete this user?"
+                        onConfirm={() => onDelete(record)}
+                        okText="Yes"
+                        cancelText="No"
+                    >
+                        <Button danger type="link">
+                            Delete
+                        </Button>
+                    </Popconfirm>
+                )}
             </>
         ),
     },
 ];
 
-const UserTable = () => {
+export default function UsersPage() {
 
-    //--------------------------------------------
-    // ⭐ 新增：获取当前登录用户角色
-    //--------------------------------------------
+    const [form] = Form.useForm();
+    const [data, setData] = useState([]);
+    const [pagination, setPagination] = useState({current: 1, pageSize: 10});
     const [currentRole, setCurrentRole] = useState(null);
 
     useEffect(() => {
@@ -43,30 +47,25 @@ const UserTable = () => {
             try {
                 const res = await fetch("/api/me");
                 if (!res.ok) return;
-                const user = await res.json();
-                setCurrentRole(user.roles);
+                const me = await res.json();
+                setCurrentRole(me.user.roles);
             } catch (err) {
                 console.error("Failed to load current user:", err);
             }
         }
+
         loadMe();
     }, []);
-    //--------------------------------------------
 
-    const [form] = Form.useForm();
-    const [data, setData] = useState([]);
-    const [pagination, setPagination] = useState({
-        current: 1,
-        pageSize: 10,
-        total: 0,
-    });
+
     const [loading, setLoading] = useState(false);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [editUser, setEditUser] = useState(null);
 
+
     const fetchData = useCallback(
-        async ({ current, pageSize }) => {
+        async ({current, pageSize}) => {
             setLoading(true);
 
             const values = form.getFieldsValue();
@@ -82,23 +81,36 @@ const UserTable = () => {
             const json = await res.json();
 
             setData(json.data);
-            setPagination({ current, pageSize, total: json.pagination.total });
+            setPagination({current, pageSize, total: json.pagination.total});
             setLoading(false);
         },
         [form]
     );
 
     useEffect(() => {
-        fetchData({ current: 1, pageSize: 10 });
+        fetchData({current: 1, pageSize: 10});
     }, [fetchData]);
 
+    if (currentRole === null) {
+        return <p style={{padding: 40}}>Loading...</p>;
+    }
+
+    if (currentRole !== "admin") {
+        return (
+            <div style={{padding: 40, textAlign: "center"}}>
+                <h2>Access Denied</h2>
+                <p>You do not have permission to view this page.</p>
+            </div>
+        );
+    }
     const handleTableChange = (pager) => {
-        fetchData({ current: pager.current, pageSize: pager.pageSize });
+        fetchData({current: pager.current, pageSize: pager.pageSize});
     };
 
     const onFinish = () => {
-        fetchData({ current: 1, pageSize: pagination.pageSize });
+        fetchData({current: 1, pageSize: pagination.pageSize});
     };
+
 
     const handleEdit = (user) => {
         setEditUser(user);
@@ -106,8 +118,12 @@ const UserTable = () => {
     };
 
     const handleDelete = (user) => {
-        fetch(`/api/users/${user.id}`, { method: "DELETE" }).then(() => {
-            fetchData({ current: 1, pageSize: pagination.pageSize });
+        if (user.roles === "admin") {
+            message.error("Admin user cannot be deleted");
+            return;
+        }
+        fetch(`/api/users/${user.id}`, {method: "DELETE"}).then(() => {
+            fetchData({current: 1, pageSize: pagination.pageSize});
         });
     };
 
@@ -115,19 +131,19 @@ const UserTable = () => {
         if (editUser) {
             await fetch(`/api/users/${editUser.id}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(values),
             });
         } else {
             await fetch(`/api/users`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(values),
             });
         }
         setModalVisible(false);
         setEditUser(null);
-        fetchData({ current: 1, pageSize: pagination.pageSize });
+        fetchData({current: 1, pageSize: pagination.pageSize});
     };
 
     return (
@@ -143,22 +159,20 @@ const UserTable = () => {
             <Form
                 form={form}
                 layout="inline"
-                initialValues={{ roles: "" }}
+                initialValues={{roles: ""}}
                 onFinish={onFinish}
             >
                 <Form.Item label="Username" name="username">
-                    <Input />
-                </Form.Item>
-                <Form.Item label="Display Name" name="displayName">
-                    <Input />
+                    <Input/>
                 </Form.Item>
 
+                <Form.Item label="Display Name" name="displayName">
+                    <Input/>
+                </Form.Item>
+
+                {/* ⭐ 角色筛选，点击自动刷新 */}
                 <Form.Item label="Roles" name="roles">
-                    <Radio.Group
-                        onChange={() => {
-                            form.submit();
-                        }}
-                    >
+                    <Radio.Group onChange={() => form.submit()}>
                         <Radio value="">All</Radio>
                         <Radio value="developer">Developer</Radio>
                         <Radio value="tester">Tester</Radio>
@@ -168,7 +182,6 @@ const UserTable = () => {
                         )}
                     </Radio.Group>
                 </Form.Item>
-
 
                 <Form.Item>
                     <Button type="primary" htmlType="submit">
@@ -200,6 +213,4 @@ const UserTable = () => {
             />
         </>
     );
-};
-
-export default UserTable;
+}

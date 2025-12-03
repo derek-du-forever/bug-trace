@@ -9,10 +9,12 @@ import { useAuth } from "@/app/contexts/AuthContext";
 
 const { Header, Content, Footer } = Layout;
 
-const mainItems = [
+const baseMenu = [
     { key: "Home", label: "Home", url: "/dashboard" },
     { key: "Users", label: "Users", url: "/users" },
 ];
+
+
 
 const rightItems = [
     { key: "Logout", label: "Logout" },
@@ -24,6 +26,10 @@ export default function ClientLayout({ children }) {
     const { user, setUser } = useAuth();
     const pathname = usePathname();
     const [messageApi, contextHolder] = message.useMessage();
+    const [open, setOpen] = useState(false);
+    const mainItems = user?.roles === "admin"
+        ? baseMenu
+        : baseMenu.filter((i) => i.key !== "Users");
 
     const handleMainMenuClick = ({ key }) => {
         const item = mainItems.find((i) => i.key === key);
@@ -66,7 +72,6 @@ export default function ClientLayout({ children }) {
     const selectedKey =
         mainItems.find((i) => pathname.startsWith(i.url))?.key || "Home";
 
-    const [open, setOpen] = useState(false);
 
     return (
         <Layout style={{ minHeight: "100vh" }}>

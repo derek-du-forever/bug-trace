@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ulid } from "ulid";
 import bcrypt from "bcrypt";
+import { requireUser } from "@/lib/guard";   // ⭐ 必须加入
 
 export async function GET(req) {
+    const currentUser = await requireUser(req); // ⭐ 获取当前登录者
+
     const { searchParams } = new URL(req.url);
     const username = searchParams.get("username");
     const displayName = searchParams.get("displayName");
@@ -11,22 +14,32 @@ export async function GET(req) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
 
-    const where = {
-        AND: [
-            username
-                ? { username: { contains: username, mode: "insensitive" } }
-                : {},
-            displayName
-                ? {
-                      displayName: {
-                          contains: displayName,
-                          mode: "insensitive",
-                      },
-                  }
-                : {},
-            roles ? { roles } : {},
-        ],
-    };
+    const whereList = [];
+
+    if (username) {
+        whereList.push({
+            username: { contains: username, mode: "insensitive" },
+        });
+    }
+
+    if (displayName) {
+        whereList.push({
+            displayName: { contains: displayName, mode: "insensitive" },
+        });
+    }
+
+    if (roles) {
+        whereList.push({ roles });
+    }
+
+    // ⭐ 非 admin 不能看到 admin 用户
+    if (currentUser.roles !== "admin") {
+        whereList.push({
+            roles: { not: "admin" },
+        });
+    }
+
+    const where = { AND: whereList };
 
     const total = await prisma.user.count({ where });
     const users = await prisma.user.findMany({
@@ -49,7 +62,17 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
+    const currentUser = await requireUser(req);
     const body = await req.json();
+
+    // ⭐ 非 admin 用户不能创建 admin 账号
+    if (currentUser.roles !== "admin" && body.roles === "admin") {
+        return NextResponse.json(
+            { error: "Permission denied: Cannot create admin user" },
+            { status: 403 }
+        );
+    }
+
     const user = await prisma.user.create({
         data: {
             id: ulid(),
@@ -60,5 +83,6 @@ export async function POST(req) {
         },
         select: { id: true, username: true, displayName: true, roles: true },
     });
+
     return NextResponse.json(user);
 }

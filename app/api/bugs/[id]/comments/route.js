@@ -21,15 +21,16 @@ export async function GET(req, { params }) {
   return NextResponse.json(comments);
 }
 
-export async function POST(req, { params }) {
+export async function POST(req, context) {
+  const { params } = await context;    // ⭐ 必须 await
+  const { id } = params;
+
   const user = await requireUser(req);
-  const { id } = params;   // bugId 正确来源
   const { content } = await req.json();
 
   if (!content) {
-    return NextResponse.json({ error: "content required" }, { status: 400 });
+    return Response.json({ error: "content required" }, { status: 400 });
   }
-
   // 1. 创建评论
   const created = await prisma.bugComment.create({
     data: {

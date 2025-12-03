@@ -32,6 +32,27 @@ const columns = (onEdit, onDelete) => [
 ];
 
 const UserTable = () => {
+
+    //--------------------------------------------
+    // ⭐ 新增：获取当前登录用户角色
+    //--------------------------------------------
+    const [currentRole, setCurrentRole] = useState(null);
+
+    useEffect(() => {
+        async function loadMe() {
+            try {
+                const res = await fetch("/api/me");
+                if (!res.ok) return;
+                const user = await res.json();
+                setCurrentRole(user.roles);
+            } catch (err) {
+                console.error("Failed to load current user:", err);
+            }
+        }
+        loadMe();
+    }, []);
+    //--------------------------------------------
+
     const [form] = Form.useForm();
     const [data, setData] = useState([]);
     const [pagination, setPagination] = useState({
@@ -47,6 +68,7 @@ const UserTable = () => {
     const fetchData = useCallback(
         async ({ current, pageSize }) => {
             setLoading(true);
+
             const values = form.getFieldsValue();
             const query = new URLSearchParams({
                 page: current,
@@ -130,13 +152,24 @@ const UserTable = () => {
                 <Form.Item label="Display Name" name="displayName">
                     <Input />
                 </Form.Item>
+
                 <Form.Item label="Roles" name="roles">
-                    <Radio.Group>
+                    <Radio.Group
+                        onChange={() => {
+                            form.submit();
+                        }}
+                    >
                         <Radio value="">All</Radio>
-                        <Radio value="user">User</Radio>
-                        <Radio value="admin">Admin</Radio>
+                        <Radio value="developer">Developer</Radio>
+                        <Radio value="tester">Tester</Radio>
+
+                        {currentRole === "admin" && (
+                            <Radio value="admin">Admin</Radio>
+                        )}
                     </Radio.Group>
                 </Form.Item>
+
+
                 <Form.Item>
                     <Button type="primary" htmlType="submit">
                         Submit

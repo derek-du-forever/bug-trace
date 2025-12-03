@@ -22,13 +22,22 @@ export const metadata = {
 
 await initDb();
 
+// export default function RootLayout({ children }) {
+//     return (
+//         <html lang="en">
+//             <body>
+//
+//                 <AuthProvider>{children}</AuthProvider>
+//             </body>
+//         </html>
+//     );
+// }
 export default function RootLayout({ children }) {
     return (
         <html lang="en">
-            <body>
-
-                <AuthProvider>{children}</AuthProvider>
-            </body>
+        <body suppressHydrationWarning>
+        <AuthProvider>{children}</AuthProvider>
+        </body>
         </html>
     );
 }

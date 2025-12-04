@@ -1,5 +1,5 @@
 "use client";
-
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import {
     Table,
@@ -22,7 +22,8 @@ const STATUS_OPTIONS = [
     "closed",
 ];
 
-export default function TesterDashboard() {
+export default function DeveloperDashboard() {
+    const { user } = useAuth();
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [descTimers, setDescTimers] = useState({});
@@ -258,9 +259,11 @@ export default function TesterDashboard() {
     return (
         <div style={{ padding: 24 }}>
             <div style={{ marginBottom: 12 }}>
-                <Button type="primary" onClick={() => setOpen(true)}>
-                    New Bug
-                </Button>
+                {user?.roles !== "developer" && (
+                    <Button type="primary" onClick={() => setOpen(true)}>
+                        New Bug
+                    </Button>
+                )}
             </div>
 
             <Table

@@ -273,9 +273,6 @@ export default function DeveloperDashboard() {
                 dataSource={list}
             />
 
-            {/* ===============================
-                Create Bug Modal
-            =============================== */}
             <Modal
                 open={open}
                 title="New Bug"

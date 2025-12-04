@@ -334,7 +334,7 @@ export default function TesterDashboard() {
         },
         {
             title: "Comments",
-            width: 50,
+            width: 100,
             render: (_, r) => (
                 <Button type="link" onClick={() => openDetail(r)}>
                     <EyeOutlined /> View

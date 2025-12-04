@@ -342,7 +342,7 @@ export default function AdminDashboard() {
         },
         {
             title: "Comments",
-            width: 50,
+            width: 100,
             render: (_, record) => (
                 <Button
                     type="link"

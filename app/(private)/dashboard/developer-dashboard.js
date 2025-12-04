@@ -220,7 +220,7 @@ export default function DeveloperDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Comments",
-            width: 50,
+            width: 100,
             render: (_, record) => (
                 <Button
                     type="link"

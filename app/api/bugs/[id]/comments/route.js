@@ -231,9 +231,9 @@ export async function DELETE(req, context) {
             );
         }
 
-        if (comment.userId !== user.id && user.role !== 'admin') {
+        if (comment.userId !== user.id && user.roles !== 'admin') {
             return NextResponse.json(
-                {error: "You can only delete your own comments"},
+                {error: `You can only delete your own comments ${user.roles}`},
                 {status: 403}
             );
         }

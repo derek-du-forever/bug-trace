@@ -1,11 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Table, Button, Form, Input, Select, Modal, message, Tag, Badge, Space, Avatar, Card, Divider, Popconfirm } from "antd";
-import { MessageOutlined, EyeOutlined, UserOutlined, SendOutlined, EditOutlined, DeleteOutlined, SaveOutlined, CloseOutlined } from "@ant-design/icons";
+import {useEffect, useState} from "react";
+import {
+    Table,
+    Button,
+    Input,
+    Modal,
+    message,
+    Tag,
+    Space,
+    Avatar,
+    Card,
+    Divider,
+    Select, Popconfirm
+} from "antd";
+import {
+    MessageOutlined,
+    EyeOutlined,
+    UserOutlined,
+    SendOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    SaveOutlined,
+    CloseOutlined
+} from "@ant-design/icons";
 
-const { confirm } = Modal;
-const { TextArea } = Input;
+const {TextArea} = Input;
 
 const STATUS_OPTIONS = [
     "open",
@@ -19,61 +39,38 @@ const STATUS_OPTIONS = [
 export default function DeveloperDashboard() {
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [assigningId, setAssigningId] = useState(null);
-    const [devOptions, setDevOptions] = useState([]);
-    const [commentCounts, setCommentCounts] = useState({});
 
     // Comment modal states
     const [detailOpen, setDetailOpen] = useState(false);
     const [selectedBug, setSelectedBug] = useState(null);
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState("");
-    const [quickComments, setQuickComments] = useState({});
     const [commentLoading, setCommentLoading] = useState(false);
 
     const [editingComment, setEditingComment] = useState(null);
     const [editContent, setEditContent] = useState("");
 
-    const currentUser = {
-        id: "current-user-id",
-        role: "developer"
-    };
+    const [currentUser, setCurrentUser] = useState(null);
 
-    const getCommentCount = async (bugId) => {
-        try {
-            const res = await fetch(`/api/bugs/${bugId}/comments`);
-            if (res.ok) {
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch("/api/me");
                 const data = await res.json();
-                return data.total || data.data?.length || 0;
+                setCurrentUser(data.user);
+            } catch {
+                message.error("Failed to load user info");
             }
-        } catch (err) {
-            console.warn('Failed to load comment count:', err);
-        }
-        return 0;
-    };
+        })();
+    }, []);
 
     const load = async () => {
+        if (!currentUser) return;
         try {
             setLoading(true);
-            const res = await fetch(`/api/bugs?page=1&pageSize=50&assigneeId=${currentUser.id}`);
+            const res = await fetch(`/api/bugs?assigneeId=${currentUser.id}&page=1&pageSize=50`);
             const data = await res.json();
-            const bugs = data.items || [];
-            setList(bugs);
-
-            if (bugs.length > 0) {
-                const commentCountPromises = bugs.map(async (bug) => {
-                    const count = await getCommentCount(bug.id);
-                    return { bugId: bug.id, count };
-                });
-
-                const results = await Promise.all(commentCountPromises);
-                const newCommentCounts = {};
-                results.forEach(({ bugId, count }) => {
-                    newCommentCounts[bugId] = count;
-                });
-
-                setCommentCounts(newCommentCounts);
-            }
+            setList(data.items || []);
         } catch (err) {
             message.error("Failed to load bugs");
         } finally {
@@ -81,66 +78,24 @@ export default function DeveloperDashboard() {
         }
     };
 
-    const loadDevelopers = async () => {
-        try {
-            const res = await fetch(`/api/users?roles=developer`);
-            const data = await res.json();
-            setDevOptions(
-                (data.data || []).map((d) => ({
-                    value: d.id,
-                    label: d.displayName || d.username,
-                }))
-            );
-        } catch (err) {
-            message.error("Failed to load developers");
-        }
-    };
-
     useEffect(() => {
-        load();
-        loadDevelopers();
-    }, []);
-
-    const assign = async (id, developerId) => {
-        try {
-            setAssigningId(id);
-            const res = await fetch(`/api/bugs/${id}/assign`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ developerId }),
-            });
-
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({}));
-                throw new Error(error || "Assign failed");
-            }
-
-            message.success("Assigned");
-            await load();
-        } catch (err) {
-            message.error(err.message);
-        } finally {
-            setAssigningId(null);
-        }
-    };
+        if (currentUser) load();
+    }, [currentUser]);
 
     const updateStatus = async (id, newStatus) => {
         try {
             const res = await fetch(`/api/bugs/${id}/status`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: newStatus }),
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({status: newStatus}),
             });
 
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({}));
-                throw new Error(error || "Update status failed");
-            }
+            if (!res.ok) throw new Error("Status update failed");
 
             message.success("Status updated");
             await load();
         } catch (err) {
-            message.error(err.message);
+            message.error("Update failed");
         }
     };
 
@@ -148,16 +103,10 @@ export default function DeveloperDashboard() {
         try {
             setCommentLoading(true);
             const res = await fetch(`/api/bugs/${bugId}/comments`);
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || "Failed to load comments");
-            }
-
             const data = await res.json();
             setComments(data.data || []);
         } catch (err) {
-            message.error("Failed to load comments: " + err.message);
-            setComments([]);
+            message.error("Failed to load comments");
         } finally {
             setCommentLoading(false);
         }
@@ -169,61 +118,19 @@ export default function DeveloperDashboard() {
         await loadComments(bug.id);
     };
 
-    const addQuickComment = async (bugId) => {
-        const content = quickComments[bugId]?.trim();
-        if (!content) {
-            message.error("Please enter comment content");
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/bugs/${bugId}/comments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content })
-            });
-
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || "Failed to add comment");
-            }
-
-            message.success("Comment added");
-            setQuickComments({ ...quickComments, [bugId]: "" });
-
-            const newCount = await getCommentCount(bugId);
-            setCommentCounts(prev => ({ ...prev, [bugId]: newCount }));
-
-        } catch (err) {
-            message.error(err.message);
-        }
-    };
-
     const addComment = async () => {
-        if (!newComment.trim()) {
-            message.error("Please enter comment content");
-            return;
-        }
-
+        if (!newComment.trim()) return message.error("Enter comment content");
         try {
             const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newComment.trim() })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({content: newComment.trim()}),
             });
 
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || "Failed to add comment");
-            }
+            if (!res.ok) throw new Error("Failed to add comment");
 
-            message.success("Comment added");
             setNewComment("");
             await loadComments(selectedBug.id);
-
-            const newCount = await getCommentCount(selectedBug.id);
-            setCommentCounts(prev => ({ ...prev, [selectedBug.id]: newCount }));
-
         } catch (err) {
             message.error(err.message);
         }
@@ -235,27 +142,20 @@ export default function DeveloperDashboard() {
     };
 
     const saveEditComment = async (commentId) => {
-        if (!editContent.trim()) {
-            message.error("Comment content cannot be empty");
-            return;
-        }
+        if (!editContent.trim()) return message.error("Comment cannot be empty");
 
         try {
             const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    commentId: commentId,
-                    content: editContent.trim()
-                })
+                    commentId,
+                    content: editContent.trim(),
+                }),
             });
 
-            if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || "Failed to update comment");
-            }
+            if (!res.ok) throw new Error("Failed to update comment");
 
-            message.success("Comment updated");
             setEditingComment(null);
             setEditContent("");
             await loadComments(selectedBug.id);
@@ -269,65 +169,62 @@ export default function DeveloperDashboard() {
         setEditContent("");
     };
 
-    const getRoleColor = (role) => {
-        switch (role) {
-            case 'admin': return 'red';
-            case 'developer': return 'blue';
-            case 'tester': return 'green';
-            default: return 'default';
-        }
-    };
+    const deleteComment = async (commentId) => {
+        try {
+            const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({commentId}),
+            });
 
-    const getUserDisplayName = (comment) => {
-        if (comment.user) {
-            return comment.user.displayName || comment.user.username || 'Unknown User';
+            if (!res.ok) throw new Error("Failed to delete comment");
+
+            await loadComments(selectedBug.id);
+        } catch (err) {
+            message.error(err.message);
         }
-        return comment.userId ? comment.userId.slice(-8) : 'Unknown';
     };
 
     const canEditComment = (comment) => {
-        return comment.userId === currentUser.id;
+        return comment.userId === currentUser?.id;
     };
 
+    const getRoleColor = (role) => ({
+        admin: "red",
+        developer: "blue",
+        tester: "green",
+    }[role] || "default");
+
+    const getUserDisplayName = (comment) =>
+        comment.user?.displayName ||
+        comment.user?.username ||
+        comment.userId?.slice(-8);
+
+    // ---------------- COLUMNS (Admin columns minus Assign & Delete)
     const columns = [
-        { title: "Title", dataIndex: "title", width: 200, ellipsis: true },
+        {title: "Title", dataIndex: "title", width: 200, ellipsis: true},
         {
             title: "Status",
             dataIndex: "status",
             width: 150,
             render: (value, record) => (
                 <Select
-                    style={{ width: '100%' }}
+                    style={{width: "100%"}}
                     value={value}
                     onChange={(v) => updateStatus(record.id, v)}
-                    options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+                    options={STATUS_OPTIONS.map((s) => ({value: s, label: s}))}
                 />
             ),
         },
-        { title: "Priority", dataIndex: "priority", width: 100 },
-        { title: "Severity", dataIndex: "severity", width: 100 },
+        {title: "Priority", dataIndex: "priority", width: 100},
+        {title: "Severity", dataIndex: "severity", width: 100},
         {
-            title: "Assign",
-            width: 200,
-            render: (_, r) => (
-                <Select
-                    style={{ width: '100%' }}
-                    value={r?.assignee?.id || undefined}
-                    options={devOptions}
-                    disabled={true}
-                    showArrow={false}
-                    bordered={false}
-                />
-            ),
-        },
-        {
-            title: "Comment",
+            title: "Comments",
             width: 120,
             render: (_, record) => (
                 <Button
                     type="link"
-                    danger
-                    icon={<EyeOutlined />}
+                    icon={<EyeOutlined/>}
                     onClick={() => openDetail(record)}
                 >
                     view
@@ -337,21 +234,16 @@ export default function DeveloperDashboard() {
     ];
 
     return (
-        <div style={{ padding: 24 }}>
+        <div style={{padding: 24}}>
             <Table
                 rowKey="id"
                 loading={loading}
                 columns={columns}
                 dataSource={list}
-                scroll={{ x: 1200 }}
-                pagination={{
-                    pageSize: 20,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                }}
+                scroll={{x: 1400}}
             />
 
-
+            {/* COMMENT MODAL — SAME AS ADMIN */}
             <Modal
                 open={detailOpen}
                 onCancel={() => {
@@ -359,56 +251,48 @@ export default function DeveloperDashboard() {
                     setSelectedBug(null);
                     setComments([]);
                     setNewComment("");
-                    setEditingComment(null);
                     setEditContent("");
+                    setEditingComment(null);
                 }}
                 title={
                     selectedBug ? (
                         <div>
-                            <MessageOutlined style={{ marginRight: 8 }} />
-                            Bug Details & Comments
-                            <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-                                {selectedBug.title}
-                            </div>
+                            <MessageOutlined style={{marginRight: 8}}/>
+                            {selectedBug.title}
                         </div>
                     ) : "Bug Details"
                 }
                 footer={null}
                 width={900}
-                style={{ top: 20 }}
+                style={{top: 20}}
             >
                 {selectedBug && (
-                    <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                        <Card size="small" style={{ marginBottom: 16, backgroundColor: '#fafafa' }}>
+                    <div style={{maxHeight: "70vh", overflowY: "auto"}}>
+                        <Card size="small" style={{marginBottom: 16}}>
                             <div><strong>Description:</strong> {selectedBug.description}</div>
-                            <div style={{ marginTop: 8 }}>
+                            <div style={{marginTop: 8}}>
                                 <Tag color="blue">Status: {selectedBug.status}</Tag>
                                 <Tag color="orange">Priority: {selectedBug.priority}</Tag>
                                 <Tag color="red">Severity: {selectedBug.severity}</Tag>
-                                {selectedBug.assignee && (
-                                    <Tag color="green">
-                                        Assigned to: {selectedBug.assignee.displayName || selectedBug.assignee.username}
-                                    </Tag>
-                                )}
                             </div>
                         </Card>
 
                         <Divider>Comments ({comments.length})</Divider>
 
-                        <Card size="small" style={{ marginBottom: 16 }}>
+                        <Card size="small" style={{marginBottom: 16}}>
                             <TextArea
-                                placeholder="Write a comment..."
                                 value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                autoSize={{ minRows: 3, maxRows: 6 }}
-                                style={{ marginBottom: 12 }}
+                                placeholder="Write a comment..."
+                                onChange={(e)=>setNewComment(e.target.value)}
+                                autoSize={{minRows:3}}
+                                style={{marginBottom:12}}
                             />
-                            <div style={{ textAlign: 'right' }}>
+                            <div style={{textAlign:"right"}}>
                                 <Button
                                     type="primary"
-                                    onClick={addComment}
+                                    icon={<SendOutlined/>}
                                     disabled={!newComment.trim()}
-                                    icon={<SendOutlined />}
+                                    onClick={addComment}
                                 >
                                     Add Comment
                                 </Button>
@@ -416,19 +300,28 @@ export default function DeveloperDashboard() {
                         </Card>
 
                         {commentLoading ? (
-                            <div style={{ textAlign: 'center', padding: 20 }}>Loading comments...</div>
+                            <div style={{textAlign:"center",padding:20}}>Loading...</div>
                         ) : comments.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>
-                                No comments yet. Be the first to comment!
+                            <div style={{textAlign:"center",padding:20,color:"#999"}}>
+                                No comments yet.
+                            </div>
+                        ) : comments.length === 0 ? (
+                            <div style={{ textAlign: "center", padding: 20, color: "#999" }}>
+                                No comments yet.
                             </div>
                         ) : (
                             comments.map(comment => (
-                                <Card key={comment.id} size="small" style={{ marginBottom: 12 }}>
-                                    <div style={{ display: 'flex', gap: 12 }}>
-                                        <Avatar size="small" icon={<UserOutlined />} />
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                                <span style={{ fontWeight: 'bold' }}>
+                                <Card key={comment.id} size="small" style={{marginBottom: 12}}>
+                                    <div style={{display: 'flex', gap: 12}}>
+                                        <Avatar size="small" icon={<UserOutlined/>}/>
+                                        <div style={{flex: 1}}>
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                marginBottom: 8
+                                            }}>
+                                                <span style={{fontWeight: 'bold'}}>
                                                     {getUserDisplayName(comment)}
                                                 </span>
                                                 {comment.user?.role && (
@@ -436,39 +329,39 @@ export default function DeveloperDashboard() {
                                                         {comment.user.role}
                                                     </Tag>
                                                 )}
-                                                <span style={{ color: '#999', fontSize: '12px' }}>
+                                                <span style={{color: '#999', fontSize: '12px'}}>
                                                     {new Date(comment.createdAt).toLocaleString()}
                                                 </span>
                                             </div>
 
                                             {editingComment === comment.id ? (
-                                                <div style={{ marginBottom: 8 }}>
+                                                <div style={{marginBottom: 8}}>
                                                     <TextArea
                                                         value={editContent}
                                                         onChange={(e) => setEditContent(e.target.value)}
-                                                        autoSize={{ minRows: 2, maxRows: 6 }}
-                                                        style={{ marginBottom: 8 }}
+                                                        autoSize={{minRows: 2, maxRows: 6}}
+                                                        style={{marginBottom: 8}}
                                                     />
                                                     <Space>
                                                         <Button
                                                             type="primary"
                                                             size="small"
                                                             onClick={() => saveEditComment(comment.id)}
-                                                            icon={<SaveOutlined />}
+                                                            icon={<SaveOutlined/>}
                                                         >
                                                             Save
                                                         </Button>
                                                         <Button
                                                             size="small"
                                                             onClick={cancelEditComment}
-                                                            icon={<CloseOutlined />}
+                                                            icon={<CloseOutlined/>}
                                                         >
                                                             Cancel
                                                         </Button>
                                                     </Space>
                                                 </div>
                                             ) : (
-                                                <div style={{ marginBottom: 8, lineHeight: '1.6' }}>
+                                                <div style={{marginBottom: 8, lineHeight: '1.6'}}>
                                                     {comment.content}
                                                 </div>
                                             )}
@@ -479,11 +372,29 @@ export default function DeveloperDashboard() {
                                                         type="text"
                                                         size="small"
                                                         onClick={() => startEditComment(comment)}
-                                                        icon={<EditOutlined />}
-                                                        style={{ padding: 0, height: 'auto' }}
+                                                        icon={<EditOutlined/>}
+                                                        style={{padding: 0, height: 'auto'}}
                                                     >
                                                         Edit
                                                     </Button>
+
+                                                    <Popconfirm
+                                                        title="Delete comment"
+                                                        description="Are you sure you want to delete this comment?"
+                                                        onConfirm={() => deleteComment(comment.id)}
+                                                        okText="Yes"
+                                                        cancelText="No"
+                                                    >
+                                                        <Button
+                                                            type="text"
+                                                            size="small"
+                                                            danger
+                                                            icon={<DeleteOutlined/>}
+                                                            style={{padding: 0, height: 'auto'}}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </Popconfirm>
                                                 </Space>
                                             )}
                                         </div>

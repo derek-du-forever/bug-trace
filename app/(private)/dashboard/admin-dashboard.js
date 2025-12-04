@@ -328,7 +328,7 @@ export default function AdminDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
-            width: 80,
+            width: 120,
             render: (_, r) => (
                 <Select
                     style={{width: '100%'}}

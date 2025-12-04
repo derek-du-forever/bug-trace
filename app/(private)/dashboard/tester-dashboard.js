@@ -300,7 +300,7 @@ export default function TesterDashboard() {
                     </Form.Item>
                 </Form>
             </Modal>
-            
+
             <Modal
                 open={historyOpen}
                 onCancel={() => setHistoryOpen(false)}
@@ -317,19 +317,12 @@ export default function TesterDashboard() {
                         }}
                     >
                         <div><b>Action:</b> {h.action}</div>
-
-                        {/* ⭐ Old 有值才显示 */}
-                        {h.oldValue && (
-                            <div><b>Old:</b> {h.oldValue}</div>
-                        )}
-
-                        <div><b>New:</b> {h.newValue}</div>
-
+                        <div><b>Old:</b> {h.oldValue ?? "-"}</div>
+                        <div><b>New:</b> {h.newValue ?? "-"}</div>
                         <div><b>User:</b> {h?.user?.displayName || h?.user?.username || h.userId}</div>
                         <div><b>Time:</b> {new Date(h.createdAt).toLocaleString()}</div>
                     </div>
                 ))}
-
             </Modal>
         </div>
     );

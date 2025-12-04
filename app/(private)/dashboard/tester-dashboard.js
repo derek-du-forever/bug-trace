@@ -1,7 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Table, Button, Form, Input, Select, Modal, message } from "antd";
+import {
+    Table,
+    Button,
+    Input,
+    Modal,
+    message,
+    Tag,
+    Space,
+    Avatar,
+    Card,
+    Divider,
+    Select,
+    Form,
+    Popconfirm,
+} from "antd";
+import {
+    MessageOutlined,
+    EyeOutlined,
+    UserOutlined,
+    SendOutlined,
+    EditOutlined,
+    DeleteOutlined,
+    SaveOutlined,
+    CloseOutlined,
+} from "@ant-design/icons";
+
+const { TextArea } = Input;
 
 const PRIORITY = ["low", "medium", "high", "critical"];
 const SEVERITY = ["minor", "major", "critical"];
@@ -17,22 +43,52 @@ const STATUS_OPTIONS = [
 export default function TesterDashboard() {
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [descTimers, setDescTimers] = useState({});
-    const [assigningId, setAssigningId] = useState(null);
+
     const [devOptions, setDevOptions] = useState([]);
 
-    // 🟦 Create Bug modal
+    // Create Bug
     const [openCreate, setOpenCreate] = useState(false);
     const [createSubmitting, setCreateSubmitting] = useState(false);
     const [createForm] = Form.useForm();
 
-    // 🟦 History modal
+    // Detail Modal
+    const [detailOpen, setDetailOpen] = useState(false);
+    const [selectedBug, setSelectedBug] = useState(null);
+
+    // Comments
+    const [comments, setComments] = useState([]);
+    const [commentLoading, setCommentLoading] = useState(false);
+    const [newComment, setNewComment] = useState("");
+
+    // comment edit/delete
+    const [editingComment, setEditingComment] = useState(null);
+    const [editContent, setEditContent] = useState("");
+
+    // History
     const [historyOpen, setHistoryOpen] = useState(false);
     const [historyList, setHistoryList] = useState([]);
 
-    // =============================================================
-    // Load Bugs
-    // =============================================================
+    // Current user
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // -----------------------------------------------------
+    // Load user
+    // -----------------------------------------------------
+    useEffect(() => {
+        (async () => {
+            try {
+                const res = await fetch("/api/me");
+                const data = await res.json();
+                setCurrentUser(data.user);
+            } catch {
+                message.error("Failed to load user info");
+            }
+        })();
+    }, []);
+
+    // -----------------------------------------------------
+    // Load bugs & developers
+    // -----------------------------------------------------
     const load = async () => {
         try {
             setLoading(true);
@@ -46,7 +102,6 @@ export default function TesterDashboard() {
         }
     };
 
-    // Load Developers
     const loadDevelopers = async () => {
         try {
             const res = await fetch(`/api/users?roles=developer`);
@@ -67,35 +122,29 @@ export default function TesterDashboard() {
         loadDevelopers();
     }, []);
 
-    // =============================================================
-    // Assign Developer
-    // =============================================================
+    // -----------------------------------------------------
+    // Assign
+    // -----------------------------------------------------
     const assign = async (id, developerId) => {
         try {
-            setAssigningId(id);
             const res = await fetch(`/api/bugs/${id}/assign`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ developerId }),
             });
 
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({}));
-                throw new Error(error || "Assign failed");
-            }
+            if (!res.ok) throw new Error("Assign failed");
 
             message.success("Assigned");
             await load();
         } catch (err) {
             message.error(err.message);
-        } finally {
-            setAssigningId(null);
         }
     };
 
-    // =============================================================
+    // -----------------------------------------------------
     // Update Status
-    // =============================================================
+    // -----------------------------------------------------
     const updateStatus = async (id, newStatus) => {
         try {
             const res = await fetch(`/api/bugs/${id}/status`, {
@@ -104,50 +153,114 @@ export default function TesterDashboard() {
                 body: JSON.stringify({ status: newStatus }),
             });
 
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({}));
-                throw new Error(error || "Update status failed");
-            }
+            if (!res.ok) throw new Error("Update status failed");
 
-            message.success("Status updated");
+            message.success("Updated");
             await load();
         } catch (err) {
             message.error(err.message);
         }
     };
 
-    // =============================================================
-    // Update Description (debounced)
-    // =============================================================
-    const debouncedUpdateDescription = (id, value) => {
-        if (descTimers[id]) clearTimeout(descTimers[id]);
-
-        const timer = setTimeout(async () => {
-            try {
-                const res = await fetch(`/api/bugs/${id}/comments`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: value }),
-                });
-
-                if (!res.ok) {
-                    const { error } = await res.json().catch(() => ({}));
-                    throw new Error(error || "Update failed");
-                }
-
-                message.success("Description updated");
-                await load();
-            } catch (err) {
-                message.error(err.message);
-            }
-        }, 500);
-
-        setDescTimers((prev) => ({ ...prev, [id]: timer }));
+    // -----------------------------------------------------
+    // Comments
+    // -----------------------------------------------------
+    const loadComments = async (bugId) => {
+        try {
+            setCommentLoading(true);
+            const res = await fetch(`/api/bugs/${bugId}/comments`);
+            const data = await res.json();
+            setComments(data.data || []);
+        } catch {
+            message.error("Failed to load comments");
+        } finally {
+            setCommentLoading(false);
+        }
     };
 
-    // =============================================================
-    // Load History
-    // =============================================================
+    const openDetail = async (bug) => {
+        setSelectedBug(bug);
+        setDetailOpen(true);
+        await loadComments(bug.id);
+    };
+
+    const addComment = async () => {
+        if (!newComment.trim()) return;
+
+        try {
+            const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: newComment.trim() }),
+            });
+
+            if (!res.ok) throw new Error("Failed to add");
+
+            setNewComment("");
+            await loadComments(selectedBug.id);
+        } catch (err) {
+            message.error(err.message);
+        }
+    };
+
+    const canEditComment = (comment) =>
+        comment.userId === currentUser?.id || currentUser?.role === "admin";
+
+    const startEditComment = (comment) => {
+        setEditingComment(comment.id);
+        setEditContent(comment.content);
+    };
+
+    const cancelEditComment = () => {
+        setEditingComment(null);
+        setEditContent("");
+    };
+
+    const saveEditComment = async (commentId) => {
+        if (!editContent.trim())
+            return message.error("Comment content cannot be empty");
+
+        try {
+            const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    commentId,
+                    content: editContent.trim(),
+                }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update comment");
+
+            message.success("Comment updated");
+            setEditingComment(null);
+            setEditContent("");
+            await loadComments(selectedBug.id);
+        } catch (err) {
+            message.error(err.message);
+        }
+    };
+
+    const deleteComment = async (commentId) => {
+        try {
+            const res = await fetch(`/api/bugs/${selectedBug.id}/comments`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ commentId }),
+            });
+
+            if (!res.ok) throw new Error("Failed to delete comment");
+
+            message.success("Comment deleted");
+            await loadComments(selectedBug.id);
+        } catch (err) {
+            message.error(err.message);
+        }
+    };
+
+    // -----------------------------------------------------
+    // History
+    // -----------------------------------------------------
     const openHistory = async (bugId) => {
         try {
             const res = await fetch(`/api/bugs/${bugId}/history`);
@@ -159,9 +272,9 @@ export default function TesterDashboard() {
         }
     };
 
-    // =============================================================
-    // Create Bug
-    // =============================================================
+    // -----------------------------------------------------
+    // Create bug
+    // -----------------------------------------------------
     const createBug = async () => {
         try {
             const values = await createForm.validateFields();
@@ -173,10 +286,7 @@ export default function TesterDashboard() {
                 body: JSON.stringify(values),
             });
 
-            if (!res.ok) {
-                const { error } = await res.json().catch(() => ({}));
-                throw new Error(error || "Create failed");
-            }
+            if (!res.ok) throw new Error("Create failed");
 
             message.success("Bug created");
             setOpenCreate(false);
@@ -189,9 +299,9 @@ export default function TesterDashboard() {
         }
     };
 
-    // =============================================================
-    // Table Columns
-    // =============================================================
+    // -----------------------------------------------------
+    // Columns
+    // -----------------------------------------------------
     const columns = [
         { title: "Title", dataIndex: "title" },
         {
@@ -199,8 +309,8 @@ export default function TesterDashboard() {
             dataIndex: "status",
             render: (value, record) => (
                 <Select
-                    style={{ width: 150 }}
                     value={value}
+                    style={{ width: 150 }}
                     onChange={(v) => updateStatus(record.id, v)}
                     options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
                 />
@@ -208,75 +318,63 @@ export default function TesterDashboard() {
         },
         { title: "Priority", dataIndex: "priority" },
         { title: "Severity", dataIndex: "severity" },
-        { title: "Assignee", render: (_, r) => r?.assignee?.displayName || "-" },
         {
             title: "Assign",
             render: (_, r) => (
                 <Select
-                    style={{ width: 240 }}
+                    style={{ width: 220 }}
                     value={r?.assignee?.id}
                     placeholder="Pick developer"
-                    loading={assigningId === r.id}
-                    disabled={assigningId === r.id}
                     onChange={(v) => assign(r.id, v)}
                     options={devOptions}
                 />
             ),
         },
         {
-            title: "Description",
-            dataIndex: "description",
-            render: (value, record) => (
-                <Input
-                    defaultValue={value}
-                    onChange={(e) =>
-                        debouncedUpdateDescription(record.id, e.target.value)
-                    }
-                    style={{ width: 250 }}
-                />
-            ),
-        },
-        {
-            title: "History",
+            title: "Comments",
             render: (_, r) => (
-                <Button onClick={() => openHistory(r.id)}>View</Button>
+                <Button type="link" onClick={() => openDetail(r)}>
+                    <EyeOutlined /> View
+                </Button>
             ),
         },
     ];
 
-    // =============================================================
+    // -----------------------------------------------------
     // UI Render
-    // =============================================================
+    // -----------------------------------------------------
     return (
         <div style={{ padding: 24 }}>
-            {/* Create Button */}
-            <div style={{ marginBottom: 12 }}>
-                <Button type="primary" onClick={() => setOpenCreate(true)}>
-                    New Bug
-                </Button>
-            </div>
+            <Button
+                type="primary"
+                onClick={() => setOpenCreate(true)}
+                style={{ marginBottom: 12 }}
+            >
+                New Bug
+            </Button>
 
-            <Table rowKey="id" loading={loading} columns={columns} dataSource={list} />
+            <Table
+                rowKey="id"
+                loading={loading}
+                columns={columns}
+                dataSource={list}
+            />
 
-            {/* =======================================================
-                Create Bug Modal
-            ======================================================= */}
+            {/* Create Bug Modal */}
             <Modal
                 open={openCreate}
                 onCancel={() => setOpenCreate(false)}
                 onOk={createBug}
                 confirmLoading={createSubmitting}
                 title="Create New Bug"
-                okText="Create"
-                width={450}
             >
                 <Form layout="vertical" form={createForm}>
                     <Form.Item
                         name="title"
                         label="Title"
-                        rules={[{ required: true, message: "Title required" }]}
+                        rules={[{ required: true }]}
                     >
-                        <Input placeholder="Bug title" />
+                        <Input />
                     </Form.Item>
 
                     <Form.Item
@@ -284,7 +382,12 @@ export default function TesterDashboard() {
                         label="Priority"
                         rules={[{ required: true }]}
                     >
-                        <Select options={PRIORITY.map((p) => ({ value: p, label: p }))} />
+                        <Select
+                            options={PRIORITY.map((p) => ({
+                                value: p,
+                                label: p,
+                            }))}
+                        />
                     </Form.Item>
 
                     <Form.Item
@@ -292,15 +395,294 @@ export default function TesterDashboard() {
                         label="Severity"
                         rules={[{ required: true }]}
                     >
-                        <Select options={SEVERITY.map((s) => ({ value: s, label: s }))} />
+                        <Select
+                            options={SEVERITY.map((s) => ({
+                                value: s,
+                                label: s,
+                            }))}
+                        />
                     </Form.Item>
 
                     <Form.Item name="description" label="Description">
-                        <Input.TextArea rows={3} placeholder="Description" />
+                        <TextArea rows={3} />
                     </Form.Item>
                 </Form>
             </Modal>
 
+            {/* Detail + Comments Modal */}
+            <Modal
+                open={detailOpen}
+                onCancel={() => {
+                    setDetailOpen(false);
+                    setSelectedBug(null);
+                    setComments([]);
+                    setNewComment("");
+                    setEditingComment(null);
+                    setEditContent("");
+                }}
+                width={900}
+                footer={null}
+                title={
+                    selectedBug ? (
+                        <div>
+                            <MessageOutlined style={{ marginRight: 8 }} />
+                            {selectedBug.title}
+                        </div>
+                    ) : (
+                        "Detail"
+                    )
+                }
+            >
+                {selectedBug && (
+                    <div style={{ maxHeight: "70vh", overflowY: "auto" }}>
+                        <Card size="small" style={{ marginBottom: 16 }}>
+                            <div>
+                                <strong>Description:</strong>{" "}
+                                {selectedBug.description}
+                            </div>
+                            <div style={{ marginTop: 8 }}>
+                                <Tag color="blue">
+                                    Status: {selectedBug.status}
+                                </Tag>
+                                <Tag color="orange">
+                                    Priority: {selectedBug.priority}
+                                </Tag>
+                                <Tag color="red">
+                                    Severity: {selectedBug.severity}
+                                </Tag>
+                            </div>
+                        </Card>
+
+                        <Divider>Comments ({comments.length})</Divider>
+
+                        <Card size="small" style={{ marginBottom: 16 }}>
+                            <TextArea
+                                placeholder="Write a comment..."
+                                value={newComment}
+                                onChange={(e) =>
+                                    setNewComment(e.target.value)
+                                }
+                                autoSize={{ minRows: 3 }}
+                                style={{ marginBottom: 12 }}
+                            />
+                            <div style={{ textAlign: "right" }}>
+                                <Button
+                                    type="primary"
+                                    icon={<SendOutlined />}
+                                    disabled={!newComment.trim()}
+                                    onClick={addComment}
+                                >
+                                    Add Comment
+                                </Button>
+                            </div>
+                        </Card>
+
+                        {commentLoading ? (
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding: 20,
+                                }}
+                            >
+                                Loading...
+                            </div>
+                        ) : comments.length === 0 ? (
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                    padding: 20,
+                                    color: "#999",
+                                }}
+                            >
+                                No comments yet.
+                            </div>
+                        ) : (
+                            comments.map((comment) => (
+                                <Card
+                                    key={comment.id}
+                                    size="small"
+                                    style={{ marginBottom: 12 }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: 12,
+                                        }}
+                                    >
+                                        <Avatar
+                                            size="small"
+                                            icon={<UserOutlined />}
+                                        />
+
+                                        <div style={{ flex: 1 }}>
+                                            {/* Header */}
+                                            <div
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 8,
+                                                    marginBottom: 8,
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    {comment.user
+                                                            ?.displayName ||
+                                                        comment.user?.username ||
+                                                        "Unknown"}
+                                                </span>
+
+                                                {comment.user?.role && (
+                                                    <Tag
+                                                        color={
+                                                            comment.user
+                                                                .role === "admin"
+                                                                ? "red"
+                                                                : comment.user
+                                                                    .role ===
+                                                                "developer"
+                                                                    ? "blue"
+                                                                    : "green"
+                                                        }
+                                                    >
+                                                        {comment.user.role}
+                                                    </Tag>
+                                                )}
+
+                                                <span
+                                                    style={{
+                                                        color: "#999",
+                                                        fontSize: 12,
+                                                    }}
+                                                >
+                                                    {new Date(
+                                                        comment.createdAt
+                                                    ).toLocaleString()}
+                                                </span>
+                                            </div>
+
+                                            {/* 内容 or 编辑框 */}
+                                            {editingComment ===
+                                            comment.id ? (
+                                                <div>
+                                                    <TextArea
+                                                        value={editContent}
+                                                        onChange={(e) =>
+                                                            setEditContent(
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        autoSize={{
+                                                            minRows: 2,
+                                                            maxRows: 6,
+                                                        }}
+                                                        style={{
+                                                            marginBottom: 8,
+                                                        }}
+                                                    />
+                                                    <Space>
+                                                        <Button
+                                                            type="primary"
+                                                            size="small"
+                                                            icon={
+                                                                <SaveOutlined />
+                                                            }
+                                                            onClick={() =>
+                                                                saveEditComment(
+                                                                    comment.id
+                                                                )
+                                                            }
+                                                        >
+                                                            Save
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            icon={
+                                                                <CloseOutlined />
+                                                            }
+                                                            onClick={
+                                                                cancelEditComment
+                                                            }
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </Space>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    style={{
+                                                        marginBottom: 8,
+                                                        lineHeight: 1.6,
+                                                    }}
+                                                >
+                                                    {comment.content}
+                                                </div>
+                                            )}
+
+                                            {/* 编辑/删除 */}
+                                            {editingComment !==
+                                                comment.id &&
+                                                canEditComment(comment) && (
+                                                    <Space size="small">
+                                                        <Button
+                                                            type="text"
+                                                            size="small"
+                                                            icon={
+                                                                <EditOutlined />
+                                                            }
+                                                            onClick={() =>
+                                                                startEditComment(
+                                                                    comment
+                                                                )
+                                                            }
+                                                            style={{
+                                                                padding: 0,
+                                                                height: "auto",
+                                                            }}
+                                                        >
+                                                            Edit
+                                                        </Button>
+
+                                                        <Popconfirm
+                                                            title="Delete comment?"
+                                                            okText="Yes"
+                                                            cancelText="No"
+                                                            onConfirm={() =>
+                                                                deleteComment(
+                                                                    comment.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <Button
+                                                                type="text"
+                                                                danger
+                                                                size="small"
+                                                                icon={
+                                                                    <DeleteOutlined />
+                                                                }
+                                                                style={{
+                                                                    padding: 0,
+                                                                    height: "auto",
+                                                                }}
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </Popconfirm>
+                                                    </Space>
+                                                )}
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))
+                        )}
+                    </div>
+                )}
+            </Modal>
+
+            {/* History Modal */}
             <Modal
                 open={historyOpen}
                 onCancel={() => setHistoryOpen(false)}
@@ -316,11 +698,23 @@ export default function TesterDashboard() {
                             borderBottom: "1px solid #eee",
                         }}
                     >
-                        <div><b>Action:</b> {h.action}</div>
-                        <div><b>Old:</b> {h.oldValue ?? "-"}</div>
-                        <div><b>New:</b> {h.newValue ?? "-"}</div>
-                        <div><b>User:</b> {h?.user?.displayName || h?.user?.username || h.userId}</div>
-                        <div><b>Time:</b> {new Date(h.createdAt).toLocaleString()}</div>
+                        <div>
+                            <b>Action:</b> {h.action}
+                        </div>
+                        <div>
+                            <b>Old:</b> {h.oldValue ?? "-"}
+                        </div>
+                        <div>
+                            <b>New:</b> {h.newValue ?? "-"}
+                        </div>
+                        <div>
+                            <b>User:</b>{" "}
+                            {h.user?.displayName || h.user?.username}
+                        </div>
+                        <div>
+                            <b>Time:</b>{" "}
+                            {new Date(h.createdAt).toLocaleString()}
+                        </div>
                     </div>
                 ))}
             </Modal>

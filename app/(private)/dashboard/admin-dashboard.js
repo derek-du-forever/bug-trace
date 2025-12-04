@@ -314,7 +314,7 @@ export default function AdminDashboard() {
         {
             title: "Status",
             dataIndex: "status",
-            width: 150,
+            width: 100,
             render: (value, record) => (
                 <Select
                     style={{width: '100%'}}
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
-            width: 100,
+            width: 80,
             render: (_, r) => (
                 <Select
                     style={{width: '100%'}}
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
         },
         {
             title: "Comments",
-            width: 120,
+            width: 50,
             render: (_, record) => (
                 <Button
                     type="link"
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
         },
         {
             title: "Delete",
-            width: 100,
+            width: 50,
             render: (_, record) => (
                 <Button
                     danger
@@ -375,7 +375,6 @@ export default function AdminDashboard() {
                 loading={loading}
                 columns={columns}
                 dataSource={list}
-                scroll={{x: 1400}}
                 pagination={{
                     pageSize: 20,
                     showSizeChanger: true,

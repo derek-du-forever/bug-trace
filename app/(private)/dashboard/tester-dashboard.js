@@ -307,7 +307,7 @@ export default function TesterDashboard() {
         {
             title: "Status",
             dataIndex: "status",
-            width: 150,
+            width: 100,
             render: (value, record) => (
                 <Select
                     value={value}
@@ -321,7 +321,7 @@ export default function TesterDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
-            width: 100,
+            width: 80,
             render: (_, r) => (
                 <Select
                     style={{width: '100%'}}
@@ -334,7 +334,7 @@ export default function TesterDashboard() {
         },
         {
             title: "Comments",
-            width: 120,
+            width: 50,
             render: (_, r) => (
                 <Button type="link" onClick={() => openDetail(r)}>
                     <EyeOutlined /> View

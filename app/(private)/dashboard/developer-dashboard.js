@@ -206,7 +206,7 @@ export default function DeveloperDashboard() {
         {
             title: "Status",
             dataIndex: "status",
-            width: 150,
+            width: 100,
             render: (value, record) => (
                 <Select
                     style={{width: "100%"}}
@@ -220,7 +220,7 @@ export default function DeveloperDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Comments",
-            width: 120,
+            width: 50,
             render: (_, record) => (
                 <Button
                     type="link"
@@ -240,7 +240,6 @@ export default function DeveloperDashboard() {
                 loading={loading}
                 columns={columns}
                 dataSource={list}
-                scroll={{x: 1400}}
             />
 
             {/* COMMENT MODAL — SAME AS ADMIN */}

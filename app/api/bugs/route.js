@@ -32,32 +32,15 @@ export async function GET(req) {
             // Testers: only see bugs they created
             where = { ...whereBase, creatorId: user.id };
         }
-        // Admins: see everything (no additional filtering)
-
-        // ----------------------------------------------------
-        // 🔍 Debug logging (English version)
-        // ----------------------------------------------------
-        console.log("===== 🔍 /api/bugs Debug Log — START =====");
         console.log("👤 Current User:", {
             id: user.id,
             username: user.username,
             role: user.roles,
         });
-        console.log("🌐 Request URL:", req.url);
-        console.log("🔎 Query Params:", {
-            status,
-            priority,
-            severity,
-            page,
-            pageSize,
-        });
-        console.log("🧩 Base Filter:", whereBase);
-        console.log("🎯 Final Prisma `where` Condition:", where);
         console.log("📄 Pagination:", {
             skip: (page - 1) * pageSize,
             take: pageSize,
         });
-        console.log("===== 🔍 /api/bugs Debug Log — END =====");
 
         // Query database
         const [rows, total] = await Promise.all([
@@ -146,13 +129,19 @@ export async function POST(req) {
         },
     });
 
+    // Write history
     await prisma.bugHistory.create({
         data: {
             bugId: bug.id,
             userId: user.id,
             action: "created",
             oldValue: null,
-            newValue: "created",
+            newValue: JSON.stringify({
+                title: bug.title,
+                priority: bug.priority,
+                severity: bug.severity,
+                description: bug.description
+            }),
         },
     });
 

@@ -26,7 +26,6 @@ import {
     CloseOutlined
 } from "@ant-design/icons";
 
-const {confirm} = Modal;
 const {TextArea} = Input;
 
 const STATUS_OPTIONS = [
@@ -252,38 +251,40 @@ export default function AdminDashboard() {
     };
 
     const showDeleteConfirm = (id) => {
-        confirm({
+        Modal.confirm({
             title: "Are you sure delete this bug?",
             content: "This action cannot be undone.",
             okText: "Yes",
             okType: "danger",
             cancelText: "No",
-            onOk: async () => {
-                await handleDelete(id);
-            }
+            getContainer: () => document.body,   // ⭐⭐ 必加！关键点 ⭐⭐
+            onOk: () => handleDelete(id)
         });
     };
+
 
     async function handleDelete(id) {
         try {
             const res = await fetch(`/api/bugs/${id}`, {
                 method: "DELETE",
-                credentials: "include",
+                credentials: "include"
             });
 
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
 
             if (!res.ok) {
                 message.error("Delete failed: " + (data.error || "Unknown error"));
                 return;
             }
 
+            setList(prev => prev.filter(item => item.id !== id));
+
             message.success("Bug deleted successfully");
-            await load();
         } catch (err) {
             message.error("Delete error: " + err.message);
         }
     }
+
 
     const getRoleColor = (role) => {
         switch (role) {
@@ -358,12 +359,18 @@ export default function AdminDashboard() {
             title: "Delete",
             width: 50,
             render: (_, record) => (
-                <Button
-                    danger
-                    onClick={() => showDeleteConfirm(record.id)}
+                <Popconfirm
+                    title="Delete this bug?"
+                    description="This action cannot be undone."
+                    onConfirm={() => handleDelete(record.id)}
+                    okText="Yes"
+                    cancelText="No"
+                    okType="danger"
+                    getPopupContainer={(triggerNode) => triggerNode.parentElement}
                 >
-                    Delete
-                </Button>
+                    <Button danger>Delete</Button>
+                </Popconfirm>
+
             ),
         },
     ];

@@ -303,26 +303,27 @@ export default function TesterDashboard() {
     // Columns
     // -----------------------------------------------------
     const columns = [
-        { title: "Title", dataIndex: "title" },
+        {title: "Title", dataIndex: "title", width: 200, ellipsis: true},
         {
             title: "Status",
             dataIndex: "status",
+            width: 150,
             render: (value, record) => (
                 <Select
                     value={value}
-                    style={{ width: 150 }}
+                    style={{width: '100%'}}
                     onChange={(v) => updateStatus(record.id, v)}
                     options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
                 />
             ),
         },
-        { title: "Priority", dataIndex: "priority" },
-        { title: "Severity", dataIndex: "severity" },
+        {title: "Priority", dataIndex: "priority", width: 100},
+        {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
             render: (_, r) => (
                 <Select
-                    style={{ width: 220 }}
+                    style={{width: '100%'}}
                     value={r?.assignee?.id}
                     placeholder="Pick developer"
                     onChange={(v) => assign(r.id, v)}
@@ -332,6 +333,7 @@ export default function TesterDashboard() {
         },
         {
             title: "Comments",
+            width: 120,
             render: (_, r) => (
                 <Button type="link" onClick={() => openDetail(r)}>
                     <EyeOutlined /> View

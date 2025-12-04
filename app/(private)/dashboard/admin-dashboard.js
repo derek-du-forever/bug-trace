@@ -328,11 +328,10 @@ export default function AdminDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
-            width: 200,
+            width: 100,
             render: (_, r) => (
                 <Select
                     style={{width: '100%'}}
-                    placeholder="Pick developer"
                     value={r?.assignee?.id || undefined}
                     loading={assigningId === r.id}
                     disabled={assigningId === r.id}

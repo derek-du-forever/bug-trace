@@ -321,6 +321,7 @@ export default function TesterDashboard() {
         {title: "Severity", dataIndex: "severity", width: 100},
         {
             title: "Assign",
+            width: 100,
             render: (_, r) => (
                 <Select
                     style={{width: '100%'}}

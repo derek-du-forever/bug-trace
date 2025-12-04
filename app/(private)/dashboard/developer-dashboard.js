@@ -314,9 +314,9 @@ export default function DeveloperDashboard() {
                     style={{ width: '100%' }}
                     value={r?.assignee?.id || undefined}
                     options={devOptions}
-                    disabled={true}        // ⭐ 完全禁止编辑
-                    showArrow={false}      // ⭐ 不显示下拉箭头（更像只读）
-                    bordered={false}       // ⭐ 更像 Label（可选）
+                    disabled={true}
+                    showArrow={false}
+                    bordered={false}
                 />
             ),
         },

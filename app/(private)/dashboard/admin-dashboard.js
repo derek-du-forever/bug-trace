@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Table, Button, Form, Input, Select, Modal, message, Tag } from "antd";
-
+const { confirm } = Modal;
 const PRIORITY = ["low", "medium", "high", "critical"];
 const SEVERITY = ["minor", "major", "critical"];
 const STATUS_OPTIONS = [
@@ -138,7 +138,44 @@ export default function AdminDashboard() {
         }
     };
 
-    /** 表格列定义（100%保持与 Tester 一致） */
+    const showDeleteConfirm = (id) => {
+        confirm({
+            title: "Are you sure delete this bug?",
+            content: "This action cannot be undone.",
+            okText: "Yes",
+            okType: "danger",
+            cancelText: "No",
+            onOk: async () => {
+                await handleDelete(id);
+            }
+        });
+    };
+
+
+    async function handleDelete(id) {
+        try {
+            const res = await fetch(`/api/bugs/${id}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                message.error("Delete failed: " + (data.error || "Unknown error"));
+                return;
+            }
+
+            message.success("Bug deleted successfully");
+            await load();
+        } catch (err) {
+            message.error("Delete error: " + err.message);
+        }
+    }
+
+
+
+
     const columns = [
         { title: "Title", dataIndex: "title" },
         {
@@ -184,10 +221,13 @@ export default function AdminDashboard() {
             ),
         },
         {
-            title: "History",
-            render: (_, r) => (
-                <Button onClick={() => openHistory(r.id)}>
-                    View
+            title: "Delete",
+            render: (_, record) => (
+                <Button
+                    danger
+                    onClick={() => handleDelete(record.id)}
+                >
+                    Delete
                 </Button>
             ),
         },
@@ -195,7 +235,6 @@ export default function AdminDashboard() {
 
     return (
         <div style={{ padding: 24 }}>
-            {/* Admin 不显示 New Bug（Tester 独有功能） */}
 
             <Table
                 rowKey="id"

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function DELETE(req, { params }) {
     try {
-        const id = params.id;   // ⬅⬅ 正确写法！
+        const id = params.id;
 
         if (!id) {
             return NextResponse.json(

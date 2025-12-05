@@ -2,16 +2,28 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/guard";
 
-export async function GET(req, { params }) {
-  await requireUser(req);
-  const { id } = params;
-  const items = await prisma.bugHistory.findMany({
+export async function GET(req, context) {
+  await requireUser(req); 
+
+  const { id } = await context.params;
+
+  const history = await prisma.bugHistory.findMany({
     where: { bugId: id },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true, action: true, oldValue: true, newValue: true, createdAt: true,
-      user: { select: { id: true, username: true, displayName: true } },
-    },
+    orderBy: { createdAt: "desc" },
   });
-  return NextResponse.json(items);
+
+  const userIds = [...new Set(history.map((h) => h.userId))];
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, username: true, displayName: true },
+  });
+
+  const userMap = Object.fromEntries(users.map((u) => [u.id, u]));
+
+  const final = history.map((h) => ({
+    ...h,
+    user: userMap[h.userId] ?? null,
+  }));
+
+  return NextResponse.json(final);
 }

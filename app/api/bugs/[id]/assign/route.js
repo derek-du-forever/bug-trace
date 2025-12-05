@@ -1,56 +1,78 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { ulid } from "ulid";
-import { requireRole } from "@/lib/guard";
+import {NextResponse} from "next/server";
+import {prisma} from "@/lib/prisma";
+import {ulid} from "ulid";
+import {requireRole} from "@/lib/guard";
 
-export async function PUT(req, { params }) {
-  const user = await requireRole(req, ["admin", "tester"]); // ✅ 允许 admin/tester
-  const { id } = params; // bugId
-  const { developerId } = await req.json();
+export async function PUT(req, context) {
+    const user = await requireRole(req, ["admin", "tester"]);
 
-  console.log("Receive assign:", id, "to developerId:", developerId);
+    const {id} = await context.params;
 
-  if (!developerId) {
-    return NextResponse.json({ error: "developerId required" }, { status: 400 });
-  }
+    const {developerId} = await req.json();
+    //get old bug info
+    const oldBug = await prisma.bug.findUnique({
+        where: {id},
+        select: {assigneeId: true}
+    });
+    let oldAssigneeName = "Unassigned";
 
-  // 校验 developer 是否存在
-  const dev = await prisma.user.findUnique({ where: { id: developerId } });
-  if (!dev) {
-    return NextResponse.json({ error: "Developer not found" }, { status: 400 });
-  }
+    if (oldBug?.assigneeId) {
+        const oldUser = await prisma.user.findUnique({
+            where: { id: oldBug.assigneeId },
+            select: { username: true, displayName: true }
+        });
 
-  try {
-    // 1️⃣ 更新 bug
-    const bug = await prisma.bug.update({
-      where: { id },
-      data: {
-        assigneeId: developerId,
-        status: "assigned",
-      },
+        if (oldUser) {
+            oldAssigneeName = oldUser.displayName || oldUser.username;
+        }
+    }
+
+    const newDev = await prisma.user.findUnique({
+        where: {id: developerId},
+        select: {
+            username: true,
+            displayName: true
+        }
     });
 
-    // 2️⃣ 单独写入 history
-    await prisma.bugHistory.create({
-      data: {
-        id: ulid(),
-        bugId: id,
-        userId: user.id,
-        action: "assigned",
-        newValue: `assigned:${developerId}`,
-      },
-    });
+    if (!newDev) {
+        return NextResponse.json({error: "Developer not found"}, {status: 400});
+    }
 
-    return NextResponse.json({
-      id: bug.id,
-      status: bug.status,
-      assigneeId: bug.assigneeId,
-    });
-  } catch (err) {
-    console.error("Assign error:", err);
-    return NextResponse.json(
-      { error: "Failed to assign", detail: err.message },
-      { status: 500 }
-    );
-  }
+    const newAssigneeName = newDev.displayName || newDev.username;
+
+    console.log("Receive assign:", oldAssigneeName, "to developerId:", newAssigneeName);
+    try {
+        const bug = await prisma.bug.update({
+            where: {id},
+            data: {
+                assigneeId: developerId,
+                status: "assigned",
+            },
+        });
+
+        await prisma.bugHistory.create({
+            data: {
+                id: ulid(),
+                bugId: id,
+                userId: user.id,
+                action: "assigned",
+                newValue: newAssigneeName,
+                oldValue: oldAssigneeName || null,
+            },
+        });
+
+        return NextResponse.json({
+            id: bug.id,
+            status: bug.status,
+            assigneeId: bug.assigneeId,
+        });
+    } catch (err) {
+        console.error("Assign error:", err);
+        return NextResponse.json(
+            {error: "Failed to assign", detail: err.message},
+            {status: 500}
+        );
+    }
 }
+

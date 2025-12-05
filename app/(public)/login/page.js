@@ -19,7 +19,6 @@ export default function Login() {
                 body: JSON.stringify(values),
             });
 
-            // 安全解析 JSON
             let data;
             try {
                 data = await res.json();
@@ -44,7 +43,6 @@ export default function Login() {
                 content: data.message,
             });
 
-            // 成功后重定向
             window.location.href = '/dashboard';
         } catch (error) {
             console.error(error);
@@ -70,7 +68,6 @@ export default function Login() {
                 alignItems: 'center',
             }}
         >
-            {/* 必须渲染 contextHolder */}
             {contextHolder}
 
             <Card title="Login" variant="borderless" style={{width: 450}}>
